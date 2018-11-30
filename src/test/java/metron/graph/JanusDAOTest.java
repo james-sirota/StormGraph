@@ -1,5 +1,8 @@
 package metron.graph;
 
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import org.apache.hadoop.hbase.shaded.org.junit.Before;
@@ -26,11 +29,13 @@ public class JanusDAOTest extends TestCase {
 
 	@Before
 	protected void setUp() throws Exception {
-		jd = new JanusDAO("/Users/jsirota/Downloads/janusgraph-0.3.1-hadoop2/conf/janusgraph-cassandra-es.properties",
-				5);
+		
 		
 		node1type = "test1";
 		node2type = "test2";
+		
+		String filename = "src/test/resources/janusgraph-cassandra-es.properties";
+		jd = new JanusDAO(filename,5);
 
 	}
 
