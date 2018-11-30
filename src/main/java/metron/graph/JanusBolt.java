@@ -34,9 +34,11 @@ public class JanusBolt extends BaseRichBolt {
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		String source = tuple.getString(0);
 		String relation = tuple.getString(1);
-		String dest = tuple.getString(0);
+		String dest = tuple.getString(2);
+		String node1type = tuple.getString(3);
+		String node2type = tuple.getString(4);
 
-		jd.linkNodes(source, relation, dest);
+		jd.linkNodes(source, relation, dest, node1type, node2type);
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {

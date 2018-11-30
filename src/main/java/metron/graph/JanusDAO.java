@@ -25,6 +25,10 @@ import org.janusgraph.core.schema.JanusGraphManagement;
 
 public class JanusDAO implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8968557226200658053L;
 	private String CONFIG_FILE;
 	private String KEY_ID;
 	private JanusGraph g;
@@ -69,7 +73,7 @@ public class JanusDAO implements Serializable{
 
 	}
 
-	public void linkNodes(String source, String relation, String dest) {
+	public void linkNodes(String source, String relation, String dest, String node1type, String node2type) {
 		Vertex src;
 		Vertex dst;
 
@@ -80,14 +84,14 @@ public class JanusDAO implements Serializable{
 			if (!vertexExists(source)) {
 				logger.trace("New Vertex Detected: " + source);
 				JanusGraphTransaction tx = g.newTransaction();
-				src = tx.addVertex(KEY_ID, source, T.label, source);
+				src = tx.addVertex(KEY_ID, source, T.label, node1type);
 				tx.commit();
 			}
 
 			if (!vertexExists(dest)) {
 				logger.trace("New Vertex Detected: " + dest);
 				JanusGraphTransaction tx = g.newTransaction();
-				dst = tx.addVertex(KEY_ID, dest, T.label, dest);
+				dst = tx.addVertex(KEY_ID, dest, T.label, node2type);
 				tx.commit();
 			}
 

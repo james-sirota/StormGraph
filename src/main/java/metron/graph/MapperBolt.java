@@ -34,17 +34,15 @@ public class MapperBolt extends BaseRichBolt {
 		String[] mc = conf.get("top.mapperbolt.mappings").toString().split(";");
 
 		for (int i = 0; i < mc.length; i++) {
-			System.out.println("SPLIT " + mc[i]);
 			String[] parts = mc[i].split(",");
-			System.out.println("SPLIT PARTS" + parts[0] + " " + parts[1] +" " + parts[2]);
-			TrippleStoreConf tc = new TrippleStoreConf(parts[0], parts[1], parts[2]);
+			TrippleStoreConf tc = new TrippleStoreConf(parts[0], parts[1], parts[2], parts[3], parts[4]);
 			mapperConfig.add(tc);
 		}
 
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("source", "edge", "dest"));
+		declarer.declare(new Fields("source", "edge", "dest", "node1type", "node2type"));
 
 	}
 
@@ -60,10 +58,11 @@ public class MapperBolt extends BaseRichBolt {
 				if (jsonObject.containsKey(configItem.getFrom()) && jsonObject.containsKey(configItem.getTo())) {
 
 					System.out.println("EMITTED MAPPED " + jsonObject.get(configItem.getFrom()) + " "
-							+ configItem.getVerb() + " " + jsonObject.get(configItem.getTo()));
+							+ configItem.getVerb() + " " + jsonObject.get(configItem.getTo()) + " " + configItem.getFromNodeType()
+							+ " " + configItem.getToNodeType());
 					
 					collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
-							jsonObject.get(configItem.getTo())));
+							jsonObject.get(configItem.getTo()), configItem.getFromNodeType(), configItem.getToNodeType()));
 				}
 			}
 
