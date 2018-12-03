@@ -47,9 +47,9 @@ public class GraphTopology {
 
 		TopologyBuilder builder = new TopologyBuilder();
 
-		String spoutName = checkForNullConfigAndLoad("top.spout.name", conf);
-		int spoutParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.spout.parallelism", conf));
-		boolean generateData = Boolean.parseBoolean(checkForNullConfigAndLoad("top.generatorSpoutEnabled", conf));
+		String spoutName = ConfigHandler.checkForNullConfigAndLoad("top.spout.name", conf);
+		int spoutParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.parallelism", conf));
+		boolean generateData = Boolean.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.generatorSpoutEnabled", conf));
 
 		if (generateData) {
 
@@ -61,16 +61,16 @@ public class GraphTopology {
 
 		} else {
 
-			String bootStrapServers = checkForNullConfigAndLoad("top.spout.kafka.bootStrapServers", conf);
-			String topic = checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
-			String consumerGroupId = checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
+			String bootStrapServers = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.bootStrapServers", conf);
+			String topic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
+			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
 			Long offsetCommitPeriodMs = Long
-					.parseLong(checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf));
-			int initialDelay = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
-			int delayPeriod = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
-			int maxDelay = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
+					.parseLong(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf));
+			int initialDelay = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
+			int delayPeriod = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
+			int maxDelay = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
 			int maxUncommittedOffsets = Integer
-					.parseInt(checkForNullConfigAndLoad("top.spout.kafka.maxUncommittedOffsets", conf));
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.maxUncommittedOffsets", conf));
 
 			logger.trace("Started initializing kafkaSpoutRetryService");
 			logger.debug("Initializing kafkaSpoutRetryService " + " with initial delay " + initialDelay
@@ -83,11 +83,11 @@ public class GraphTopology {
 
 			logger.trace("Finished initializing kafkaSpoutRetryService");
 
-			String tupleFieldTopic = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldTopic", conf);
-			String tupleFieldPartition = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition", conf);
-			String tupleFieldOffset = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
-			String tupleFieldKey = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
-			String tupleFieldValue = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
+			String tupleFieldTopic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldTopic", conf);
+			String tupleFieldPartition = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition", conf);
+			String tupleFieldOffset = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
+			String tupleFieldKey = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
+			String tupleFieldValue = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
 
 			logger.trace("Started initializing spoutConf");
 			KafkaSpoutConfig<String, String> spoutConf = KafkaSpoutConfig.builder(bootStrapServers, topic)
@@ -105,27 +105,27 @@ public class GraphTopology {
 
 		}
 
-		String mapperBoltName = checkForNullConfigAndLoad("top.mapperbolt.name", conf);
-		int mapperboltParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
+		String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
+		int mapperboltParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
 		logger.debug("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
 		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
 
-		String graphBoltName = checkForNullConfigAndLoad("top.graphbolt.name", conf);
-		int graphBoltParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
+		String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
+		int graphBoltParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
 
 		logger.debug("Initializing " + graphBoltName + " with parallelism " + graphBoltParallelism);
 		builder.setBolt(graphBoltName, new JanusBolt(), graphBoltParallelism).shuffleGrouping(mapperBoltName);
 
-		boolean debugMode = Boolean.getBoolean(checkForNullConfigAndLoad("top.debug", conf));
+		boolean debugMode = Boolean.getBoolean(ConfigHandler.checkForNullConfigAndLoad("top.debug", conf));
 		conf.setDebug(debugMode);
 
-		int numWorkers = Integer.parseInt(checkForNullConfigAndLoad("top.numWorkers", conf));
+		int numWorkers = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.numWorkers", conf));
 		conf.setNumWorkers(numWorkers);
 
-		boolean localDeploy = Boolean.parseBoolean(checkForNullConfigAndLoad("top.localDeploy", conf));
+		boolean localDeploy = Boolean.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.localDeploy", conf));
 
-		String topologyName = checkForNullConfigAndLoad("top.name", conf);
+		String topologyName = ConfigHandler.checkForNullConfigAndLoad("top.name", conf);
 
 		if (localDeploy) {
 			LocalCluster cluster = new LocalCluster();
@@ -160,15 +160,6 @@ public class GraphTopology {
 		return conf;
 	}
 
-	public static String checkForNullConfigAndLoad(String configName, Config conf) throws IllegalArgumentException {
-		if (!conf.containsKey(configName))
-			throw new IllegalArgumentException(configName + " param cannot be null.");
 
-		String value = conf.get(configName).toString();
-
-		logger.debug("Value of " + configName + " is " + value);
-
-		return value;
-	}
 
 }

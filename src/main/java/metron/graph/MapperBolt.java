@@ -38,21 +38,17 @@ public class MapperBolt extends BaseRichBolt {
 	private OutputCollector collector;
 	private JSONParser parser;
 	private ArrayList<TrippleStoreConf> mapperConfig;
+	private String tupleToLookFor;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		parser = new JSONParser();
 
-		mapperConfig = new ArrayList<TrippleStoreConf>();
+		String mappingString = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.mappings", conf);
+		mapperConfig = ConfigHandler.getAndValidateMappings(mappingString);
 
-		String[] mc = conf.get("top.mapperbolt.mappings").toString().split(";");
-
-		for (int i = 0; i < mc.length; i++) {
-			String[] parts = mc[i].split(",");
-			TrippleStoreConf tc = new TrippleStoreConf(parts[0], parts[1], parts[2], parts[3], parts[4]);
-			mapperConfig.add(tc);
-		}
+		tupleToLookFor = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.tupleToLookFor", conf);
 
 	}
 
@@ -64,7 +60,7 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
-			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField("value"));
+			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
 
 			System.out.println("PARSED JSON: " + jsonObject);
 
@@ -73,11 +69,12 @@ public class MapperBolt extends BaseRichBolt {
 				if (jsonObject.containsKey(configItem.getFrom()) && jsonObject.containsKey(configItem.getTo())) {
 
 					System.out.println("EMITTED MAPPED " + jsonObject.get(configItem.getFrom()) + " "
-							+ configItem.getVerb() + " " + jsonObject.get(configItem.getTo()) + " " + configItem.getFromNodeType()
-							+ " " + configItem.getToNodeType());
-					
+							+ configItem.getVerb() + " " + jsonObject.get(configItem.getTo()) + " "
+							+ configItem.getFromNodeType() + " " + configItem.getToNodeType());
+
 					collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
-							jsonObject.get(configItem.getTo()), configItem.getFromNodeType(), configItem.getToNodeType()));
+							jsonObject.get(configItem.getTo()), configItem.getFromNodeType(),
+							configItem.getToNodeType()));
 				}
 			}
 
@@ -85,7 +82,6 @@ public class MapperBolt extends BaseRichBolt {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 
 	}
 
