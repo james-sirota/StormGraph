@@ -34,8 +34,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
-
 public class GraphTopology {
 
 	private static final Logger logger = LoggerFactory.getLogger(GraphTopology.class);
