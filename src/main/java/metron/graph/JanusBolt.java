@@ -23,6 +23,10 @@ import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.esotericsoftware.minlog.Log;
 
 public class JanusBolt extends BaseRichBolt {
 
@@ -33,25 +37,51 @@ public class JanusBolt extends BaseRichBolt {
 
 	private String JANUS_CONFIG;
 	private int TTL_VALUE;
-
+	private Logger logger;
 	private JanusDAO jd;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+		logger = LoggerFactory.getLogger(MapperBolt.class);
 
-		JANUS_CONFIG = conf.get("top.graphbolt.backEndConfigLocation").toString();
-		TTL_VALUE = Integer.parseInt(conf.get("top.graphbolt.ttlDays").toString());
+		logger.trace("Initializing janus bolt...");
 
+		JANUS_CONFIG = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.backEndConfigLocation", conf);
+		TTL_VALUE = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.ttlDays", conf));
+
+		logger.trace("Initializing Janus DAO...");
 		jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
 		// jd.createConnectsRelationshipSchema();
 	}
 
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
-		String source = tuple.getString(0);
-		String relation = tuple.getString(1);
-		String dest = tuple.getString(2);
-		String node1type = tuple.getString(3);
-		String node2type = tuple.getString(4);
+
+		if (!tuple.contains("source"))
+			throw new IllegalArgumentException("Source tuple is not present");
+
+		String source = tuple.getStringByField("source");
+
+		if (!tuple.contains("edge"))
+			throw new IllegalArgumentException("Edge tuple is not present");
+
+		String relation = tuple.getStringByField("edge");
+
+		if (!tuple.contains("dest"))
+			throw new IllegalArgumentException("Dest tuple is not present");
+
+		String dest = tuple.getStringByField("dest");
+
+		if (!tuple.contains("node1type"))
+			throw new IllegalArgumentException("node1type tuple is not present");
+
+		String node1type = tuple.getStringByField("node1type");
+
+		if (!tuple.contains("node2type"))
+			throw new IllegalArgumentException("node2type tuple is not present");
+
+		String node2type = tuple.getStringByField("node2type");
+
+		logger.debug("Processing: " + tuple.toString());
 
 		jd.linkNodes(source, relation, dest, node1type, node2type);
 	}
