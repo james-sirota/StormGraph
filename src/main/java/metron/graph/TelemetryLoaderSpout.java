@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class TelemetryLoaderSpout extends BaseRichSpout {
 
 	private static final long serialVersionUID = 1L;
-	private static final Logger LOG = LoggerFactory.getLogger(TelemetryLoaderSpout.class);
+	private static final Logger logger = LoggerFactory.getLogger(TelemetryLoaderSpout.class);
 	private SpoutOutputCollector collector;
 	private Random rand;
 	private int sleep;
@@ -44,8 +44,11 @@ public class TelemetryLoaderSpout extends BaseRichSpout {
 	@SuppressWarnings("unchecked")
 	public void nextTuple() {
 		Utils.sleep(sleep);
+		logger.debug("Spout woke up from sleep");
 
 		JSONObject json = new JSONObject();
+		
+		
 
 		json.put(sourceName, rand.nextInt(randSize) + "." + rand.nextInt(randSize) + "." + rand.nextInt(randSize) + "."
 				+ rand.nextInt(randSize));
@@ -72,7 +75,7 @@ public class TelemetryLoaderSpout extends BaseRichSpout {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("raw"));
+		declarer.declare(new Fields("value"));
 
 	}
 

@@ -64,7 +64,7 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
-			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getString(0));
+			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField("value"));
 
 			System.out.println("PARSED JSON: " + jsonObject);
 

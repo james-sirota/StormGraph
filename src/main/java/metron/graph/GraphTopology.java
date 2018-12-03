@@ -20,10 +20,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.kafka.spout.KafkaSpout;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +43,42 @@ public class GraphTopology {
 		Config conf = readConfigFromFile(args[0]);
 
 		TopologyBuilder builder = new TopologyBuilder();
+		
+		if(Boolean.parseBoolean(conf.get("top.generatorSpoutEnabled").toString()))
+		{
 		builder.setSpout(conf.get("top.spout.name").toString(), new TelemetryLoaderSpout(),
 				Integer.parseInt(conf.get("top.spout.parallelism").toString()));
+		}
+		else
+		{
+			String bootStrapServers = conf.get("top.spout.kafka.bootStrapServers").toString();
+			String topic = conf.get("top.spout.kafka.topic").toString();
+			String consumerGroupId = conf.get("top.spout.kafka.consumerGroupId").toString();
+			Long offsetCommitPeriodMs = Long.parseLong(conf.get("top.spout.kafka.consumerGroupId").toString());
+			int initialDelay=Integer.parseInt(conf.get("top.spout.kafka.retry.initialDelay").toString());
+			int delayPeriod=Integer.parseInt(conf.get("top.spout.kafka.retry.delayPeriod").toString());
+			int maxDelay=Integer.parseInt(conf.get("top.spout.kafka.retry.maxDelay").toString());
+			int maxUncommittedOffsets=Integer.parseInt(conf.get("top.spout.kafka.maxUncommittedOffsets").toString());
+			
+			KafkaSpoutRetryService kafkaSpoutRetryService =  new KafkaSpoutRetryExponentialBackoff(
+					KafkaSpoutRetryExponentialBackoff.TimeInterval.microSeconds(initialDelay),
+			        KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(delayPeriod), 
+			        Integer.MAX_VALUE, 
+			        KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(maxDelay));
+			
+			KafkaSpoutConfig<String, String> spoutConf =  KafkaSpoutConfig.builder(bootStrapServers, topic)
+			        .setProp(ConsumerConfig.GROUP_ID_CONFIG,consumerGroupId)
+			        .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
+			        .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST)
+			        .setMaxUncommittedOffsets(maxUncommittedOffsets)
+			        .setRetry(kafkaSpoutRetryService)
+			        .setRecordTranslator((r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
+			                new Fields("topic", "partition", "offset", "key", "value"))
+			        .build();
+			
+			builder.setSpout(conf.get("top.spout.name").toString(), new KafkaSpout<String, String>(spoutConf),
+					Integer.parseInt(conf.get("top.spout.parallelism").toString()));
+		}
 
 		builder.setBolt(conf.get("top.mapperbolt.name").toString(), new MapperBolt(),
 				Integer.parseInt(conf.get("top.mapperbolt.parallelism").toString()))
