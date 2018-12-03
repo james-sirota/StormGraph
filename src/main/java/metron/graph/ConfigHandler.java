@@ -76,6 +76,11 @@ public class ConfigHandler {
 
 		}
 
+		if (mapperConfig.isEmpty())
+			throw new IllegalArgumentException("Mapper configuration is empty, something went wrong");
+
+		logger.debug("Finished loading mapping configuration. Number of configurations found: " + mapperConfig.size());
+
 		return mapperConfig;
 	}
 

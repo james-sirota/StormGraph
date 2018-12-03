@@ -28,6 +28,8 @@ import org.apache.storm.tuple.Values;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MapperBolt extends BaseRichBolt {
 
@@ -39,20 +41,25 @@ public class MapperBolt extends BaseRichBolt {
 	private JSONParser parser;
 	private ArrayList<TrippleStoreConf> mapperConfig;
 	private String tupleToLookFor;
+	private Logger logger;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
+		logger = LoggerFactory.getLogger(MapperBolt.class);
+
+		logger.trace("Initializing parser...");
 		parser = new JSONParser();
 
+		logger.trace("Initializing mapping config...");
 		String mappingString = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.mappings", conf);
 		mapperConfig = ConfigHandler.getAndValidateMappings(mappingString);
-
 		tupleToLookFor = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.tupleToLookFor", conf);
 
 	}
 
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	public void declareOutputFields(OutputFieldsDeclarer declarer) 
+	{
 		declarer.declare(new Fields("source", "edge", "dest", "node1type", "node2type"));
 
 	}
@@ -60,26 +67,41 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
+
+			if (!tuple.contains(tupleToLookFor))
+				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
+
 			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
 
-			System.out.println("PARSED JSON: " + jsonObject);
+			logger.debug("PARSED JSON: " + jsonObject);
+
+			if (jsonObject.keySet().size() == 0)
+				throw new IllegalArgumentException(jsonObject + " is not a valid message");
 
 			for (int i = 0; i < mapperConfig.size(); i++) {
 				TrippleStoreConf configItem = mapperConfig.get(i);
 				if (jsonObject.containsKey(configItem.getFrom()) && jsonObject.containsKey(configItem.getTo())) {
 
-					System.out.println("EMITTED MAPPED " + jsonObject.get(configItem.getFrom()) + " "
-							+ configItem.getVerb() + " " + jsonObject.get(configItem.getTo()) + " "
-							+ configItem.getFromNodeType() + " " + configItem.getToNodeType());
+					logger.debug("MATCHED RULE: " + configItem.printElement());
+					logger.debug("MAPPED OBJECT TO RELATION " + jsonObject.get(configItem.getFrom()) + " " + configItem.getVerb()
+							+ " " + jsonObject.get(configItem.getTo()) + " " + configItem.getFromNodeType() + " "
+							+ configItem.getToNodeType());
 
 					collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
 							jsonObject.get(configItem.getTo()), configItem.getFromNodeType(),
 							configItem.getToNodeType()));
+				} else {
+					if (!jsonObject.containsKey(configItem.getFrom()))
+						logger.debug("No source vertex " + configItem.getFrom() + " in object " + jsonObject);
+
+					if (!jsonObject.containsKey(configItem.getTo()))
+						logger.debug("No dest vertex " + configItem.getTo() + " in object " + jsonObject);
 				}
 			}
 
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
+		} catch (ParseException e) 
+		{
+			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
 			e.printStackTrace();
 		}
 
