@@ -40,18 +40,16 @@ public class GraphTopology {
 
 	public static void main(String[] args) throws Exception {
 
+		if (args[0] == null)
+			System.out.println("Please specify the location of the file graphtopology_config.conf");
+
 		Config conf = readConfigFromFile(args[0], logger);
 
 		TopologyBuilder builder = new TopologyBuilder();
 
-		String spoutName = conf.get("top.spout.name").toString();
-		logger.debug("Set spoutName " + " to " + spoutName);
-
-		int spoutParallelism = Integer.parseInt(conf.get("top.spout.parallelism").toString());
-		logger.debug("Set spoutParallelism" + " to " + spoutParallelism);
-
-		boolean generateData = Boolean.parseBoolean(conf.get("top.generatorSpoutEnabled").toString());
-		logger.debug("Set  generateData" + " to " + generateData);
+		String spoutName = checkForNullConfigAndLoad("top.spout.name", conf);
+		int spoutParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.spout.parallelism", conf));
+		boolean generateData = Boolean.parseBoolean(checkForNullConfigAndLoad("top.generatorSpoutEnabled", conf));
 
 		if (generateData) {
 
@@ -63,31 +61,16 @@ public class GraphTopology {
 
 		} else {
 
-			logger.trace("Started initializing kafka spout");
-
-			String bootStrapServers = conf.get("top.spout.kafka.bootStrapServers").toString();
-			logger.debug("Set bootStrapServers" + " to " + bootStrapServers);
-
-			String topic = conf.get("top.spout.kafka.topic").toString();
-			logger.debug("Set topic" + " to " + topic);
-
-			String consumerGroupId = conf.get("top.spout.kafka.consumerGroupId").toString();
-			logger.debug("Set consumerGroupId" + " to " + consumerGroupId);
-
-			Long offsetCommitPeriodMs = Long.parseLong(conf.get("top.spout.kafka.consumerGroupId").toString());
-			logger.debug("Set offsetCommitPeriodMs" + " to " + offsetCommitPeriodMs);
-
-			int initialDelay = Integer.parseInt(conf.get("top.spout.kafka.retry.initialDelay").toString());
-			logger.debug("Set initialDelay" + " to " + initialDelay);
-
-			int delayPeriod = Integer.parseInt(conf.get("top.spout.kafka.retry.delayPeriod").toString());
-			logger.debug("Set delayPeriod" + " to " + delayPeriod);
-
-			int maxDelay = Integer.parseInt(conf.get("top.spout.kafka.retry.maxDelay").toString());
-			logger.debug("Set maxDelay" + " to " + maxDelay);
-
-			int maxUncommittedOffsets = Integer.parseInt(conf.get("top.spout.kafka.maxUncommittedOffsets").toString());
-			logger.debug("Set maxUncommittedOffsets" + " to " + maxUncommittedOffsets);
+			String bootStrapServers = checkForNullConfigAndLoad("top.spout.kafka.bootStrapServers", conf);
+			String topic = checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
+			String consumerGroupId = checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
+			Long offsetCommitPeriodMs = Long
+					.parseLong(checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf));
+			int initialDelay = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
+			int delayPeriod = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
+			int maxDelay = Integer.parseInt(checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
+			int maxUncommittedOffsets = Integer
+					.parseInt(checkForNullConfigAndLoad("top.spout.kafka.maxUncommittedOffsets", conf));
 
 			logger.trace("Started initializing kafkaSpoutRetryService");
 			logger.debug("Initializing kafkaSpoutRetryService " + " with initial delay " + initialDelay
@@ -100,20 +83,11 @@ public class GraphTopology {
 
 			logger.trace("Finished initializing kafkaSpoutRetryService");
 
-			String tupleFieldTopic = conf.get("top.spout.kafka.tupleFieldTopic").toString();
-			logger.debug("Set tupleFieldTopic" + " to " + tupleFieldTopic);
-
-			String tupleFieldPartition = conf.get("top.spout.kafka.tupleFieldPartition").toString();
-			logger.debug("Set tupleFieldPartition" + " to " + tupleFieldPartition);
-
-			String tupleFieldOffset = conf.get("top.spout.kafka.tupleFieldOffset").toString();
-			logger.debug("Set tupleFieldOffset" + " to " + tupleFieldOffset);
-
-			String tupleFieldKey = conf.get("top.spout.kafka.tupleFieldKey").toString();
-			logger.debug("Set tupleFieldKey" + " to " + tupleFieldKey);
-
-			String tupleFieldValue = conf.get("top.spout.kafka.tupleFieldValue").toString();
-			logger.debug("Set tupleFieldValue" + " to " + tupleFieldValue);
+			String tupleFieldTopic = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldTopic", conf);
+			String tupleFieldPartition = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition", conf);
+			String tupleFieldOffset = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
+			String tupleFieldKey = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
+			String tupleFieldValue = checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
 
 			logger.trace("Started initializing spoutConf");
 			KafkaSpoutConfig<String, String> spoutConf = KafkaSpoutConfig.builder(bootStrapServers, topic)
@@ -131,43 +105,27 @@ public class GraphTopology {
 
 		}
 
-		String mapperBoltName = conf.get("top.mapperbolt.name").toString();
-		logger.debug("Set mapperBoltName" + " to " + mapperBoltName);
+		String mapperBoltName = checkForNullConfigAndLoad("top.mapperbolt.name", conf);
+		int mapperboltParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
-		int spoutBoltParallelism = Integer.parseInt(conf.get("top.mapperbolt.parallelism").toString());
-		logger.debug("Set spoutBoltParallelism" + " to " + spoutBoltParallelism);
-		
-		logger.debug("Initializing " + mapperBoltName + " with parallelism " + spoutBoltParallelism);
-		builder.setBolt(mapperBoltName, new MapperBolt(), spoutBoltParallelism).shuffleGrouping(spoutName);
-		
-		String graphBoltName = conf.get("top.graphbolt.name").toString();
-		logger.debug("Set graphBoltName" + " to " + graphBoltName);
-		
-		int graphBoltParallelism = Integer.parseInt(conf.get("top.graphbolt.parallelism").toString());
-		logger.debug("Set graphBoltParallelism" + " to " + graphBoltParallelism);
-		
-		
+		logger.debug("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
+		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
+
+		String graphBoltName = checkForNullConfigAndLoad("top.graphbolt.name", conf);
+		int graphBoltParallelism = Integer.parseInt(checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
+
 		logger.debug("Initializing " + graphBoltName + " with parallelism " + graphBoltParallelism);
-		builder.setBolt(graphBoltName, new JanusBolt(),graphBoltParallelism)
-				.shuffleGrouping(conf.get("top.mapperbolt.name").toString());
+		builder.setBolt(graphBoltName, new JanusBolt(), graphBoltParallelism).shuffleGrouping(mapperBoltName);
 
-		boolean debugMode = Boolean.getBoolean("top.debug");
-		logger.debug("Set debugMode" + " to " + debugMode);
-		
-		logger.trace("Updating conf.setDebug with value " + debugMode);
+		boolean debugMode = Boolean.getBoolean(checkForNullConfigAndLoad("top.debug", conf));
 		conf.setDebug(debugMode);
-		
-		int numWorkers = Integer.parseInt(conf.get("top.numWorkers").toString());
-		logger.debug("Set numWorkers" + " to " + numWorkers);
 
-		logger.trace("Updating conf.setNumWorkers with value " + numWorkers);
+		int numWorkers = Integer.parseInt(checkForNullConfigAndLoad("top.numWorkers", conf));
 		conf.setNumWorkers(numWorkers);
 
-		boolean localDeploy = Boolean.parseBoolean(conf.get("top.localDeploy").toString());
-		logger.debug("Set localDeploy" + " to " + localDeploy);
-		
-		String topologyName = conf.get("top.name").toString();
-		logger.debug("Set topologyName" + " to " + topologyName);
+		boolean localDeploy = Boolean.parseBoolean(checkForNullConfigAndLoad("top.localDeploy", conf));
+
+		String topologyName = checkForNullConfigAndLoad("top.name", conf);
 
 		if (localDeploy) {
 			LocalCluster cluster = new LocalCluster();
@@ -201,4 +159,16 @@ public class GraphTopology {
 
 		return conf;
 	}
+
+	public static String checkForNullConfigAndLoad(String configName, Config conf) throws IllegalArgumentException {
+		if (!conf.containsKey(configName))
+			throw new IllegalArgumentException(configName + " param cannot be null.");
+
+		String value = conf.get(configName).toString();
+
+		logger.debug("Value of " + configName + " is " + value);
+
+		return value;
+	}
+
 }
