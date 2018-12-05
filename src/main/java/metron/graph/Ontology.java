@@ -47,7 +47,7 @@ public class Ontology implements Serializable{
 	}
 
 	public String printElement() {
-		return ("Vertex1: " + vertex1 + " Vertex2" + vertex2 + " Verb: " + verb + " Vertex1type: " + vertex1type
+		return ("Vertex1: " + vertex1 + " Vertex2: " + vertex2 + " Verb: " + verb + " Vertex1type: " + vertex1type
 				+ " Vertex2type: " + vertex2type);
 	}
 

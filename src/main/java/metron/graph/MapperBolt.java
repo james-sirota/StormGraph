@@ -62,7 +62,7 @@ public class MapperBolt extends BaseRichBolt {
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields("source", "edge", "dest", "node1type", "node2type"));
+		declarer.declare(new Fields("ont"));
 
 	}
 
@@ -90,13 +90,10 @@ public class MapperBolt extends BaseRichBolt {
 			{
 				Ontology ont = ontologyList.get(i);
 				
-				logger.trace("Emmiting ontology: " + ont.printElement());
+				logger.debug("Emmiting ontology: " + ont.printElement());
 				
-				collector.emit(new Values(ont.getVertex1(), ont.getVerb(), ont.getVertex2(), ont.getVertex1type(), ont.getVertex2type()));
+				collector.emit(new Values(ont));
 			}
-			
-			//collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
-			//jsonObject.get(configItem.getTo()), configItem.getFromNodeType(), configItem.getToNodeType()));
 			
 
 		}catch(

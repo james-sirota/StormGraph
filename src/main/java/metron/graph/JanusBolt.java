@@ -37,10 +37,11 @@ public class JanusBolt extends BaseRichBolt {
 	private int TTL_VALUE;
 	private Logger logger;
 	private JanusDAO jd;
+	private String FIELD_TO_LOOK_FOR = "ont";
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-		logger = LoggerFactory.getLogger(MapperBolt.class);
+		logger = LoggerFactory.getLogger(JanusBolt.class);
 
 		logger.trace("Initializing janus bolt...");
 
@@ -50,38 +51,21 @@ public class JanusBolt extends BaseRichBolt {
 		logger.trace("Initializing Janus DAO...");
 		jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
 		// jd.createConnectsRelationshipSchema();
+		
+		logger.debug("Janus bolt initialized...");
 	}
 
-	public void execute(Tuple tuple, BasicOutputCollector collector) {
+	public void execute(Tuple tuple) {
+		
 
-		if (!tuple.contains("source"))
-			throw new IllegalArgumentException("Source tuple is not present");
+		if (!tuple.contains(FIELD_TO_LOOK_FOR))
+			throw new IllegalArgumentException("Ontology is not present, invalid input in field: " + FIELD_TO_LOOK_FOR);
 
-		String source = tuple.getStringByField("source");
+		Ontology ont = (Ontology) tuple.getValueByField(FIELD_TO_LOOK_FOR);
 
-		if (!tuple.contains("edge"))
-			throw new IllegalArgumentException("Edge tuple is not present");
+		logger.debug("Graphing ontology: " + ont.printElement());
 
-		String relation = tuple.getStringByField("edge");
-
-		if (!tuple.contains("dest"))
-			throw new IllegalArgumentException("Dest tuple is not present");
-
-		String dest = tuple.getStringByField("dest");
-
-		if (!tuple.contains("node1type"))
-			throw new IllegalArgumentException("node1type tuple is not present");
-
-		String node1type = tuple.getStringByField("node1type");
-
-		if (!tuple.contains("node2type"))
-			throw new IllegalArgumentException("node2type tuple is not present");
-
-		String node2type = tuple.getStringByField("node2type");
-
-		logger.debug("Processing: " + tuple.toString());
-
-		jd.linkNodes(source, relation, dest, node1type, node2type);
+		jd.linkNodes(ont.getVertex1(), ont.getVerb(), ont.getVertex2(), ont.getVertex1type(), ont.getVertex2type());
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
@@ -89,9 +73,5 @@ public class JanusBolt extends BaseRichBolt {
 
 	}
 
-	public void execute(Tuple input) {
-		// TODO Auto-generated method stub
-
-	}
 
 }
