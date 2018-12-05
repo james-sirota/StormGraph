@@ -27,10 +27,10 @@ import junit.framework.TestSuite;
 
 public class JanusDAOTest extends TestCase {
 
-	private JanusDAO jd;
 	private String node1type;
 	private String node2type;
 	private static final Logger logger = LoggerFactory.getLogger(JanusDAOTest.class);
+	String filename;
 
 	public JanusDAOTest(String testName) {
 		super(testName);
@@ -47,8 +47,8 @@ public class JanusDAOTest extends TestCase {
 		node1type = "test1";
 		node2type = "test2";
 		
-		String filename = "src/test/resources/janusgraph-cassandra-es.properties";
-		jd = new JanusDAO(filename,5);
+		filename = "src/test/resources/janusgraph-cassandra-es.properties";
+
 
 	}
 
@@ -59,6 +59,7 @@ public class JanusDAOTest extends TestCase {
 
 	public void testSingleNodeCreation() {
 
+		JanusDAO jd = new JanusDAO(filename,5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		assertTrue(jd.vertexExists("1.1.1.1"));
 		assertTrue(jd.vertexExists("2.2.2.2"));
@@ -69,6 +70,9 @@ public class JanusDAOTest extends TestCase {
 	}
 	
 	public void checkRelationExists() {
+		
+		JanusDAO jd = new JanusDAO(filename,5);
+		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		
 		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
@@ -82,6 +86,9 @@ public class JanusDAOTest extends TestCase {
 
 	public void testDuplicateInsertionEdge() {
 
+		JanusDAO jd = new JanusDAO(filename,5);
+		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
+		
 		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
 		
 
@@ -122,6 +129,8 @@ public class JanusDAOTest extends TestCase {
 	}
 
 	public void testNodeEdgeCombinations() {
+		
+		JanusDAO jd = new JanusDAO(filename,5);
 
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
@@ -132,7 +141,7 @@ public class JanusDAOTest extends TestCase {
 		ArrayList<String> el = jd.getConnection("1.1.1.1", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 3);
 		
-		logger.debug("Checkpoint 2");
+		
 
 		assertTrue(el.get(0).equals("2.2.2.2"));
 		assertTrue(el.get(1).equals("3.3.3.3"));
@@ -173,6 +182,7 @@ public class JanusDAOTest extends TestCase {
 
 	public void testRelationCombinations() {
 
+		JanusDAO jd = new JanusDAO(filename,5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		jd.linkNodes("user1", EdgeTypes.USES, "2.2.2.2", node1type, node2type);
 
