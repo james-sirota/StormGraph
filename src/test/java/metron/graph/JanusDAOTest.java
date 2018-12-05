@@ -18,6 +18,8 @@ package metron.graph;
 import java.util.ArrayList;
 
 import org.apache.hadoop.hbase.shaded.org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -28,6 +30,7 @@ public class JanusDAOTest extends TestCase {
 	private JanusDAO jd;
 	private String node1type;
 	private String node2type;
+	private static final Logger logger = LoggerFactory.getLogger(JanusDAOTest.class);
 
 	public JanusDAOTest(String testName) {
 		super(testName);
@@ -116,33 +119,49 @@ public class JanusDAOTest extends TestCase {
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
+		
+		logger.debug("Checkpoint 1");
 
 		ArrayList<String> el = jd.getConnection("1.1.1.1", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 3);
+		
+		logger.debug("Checkpoint 2");
 
 		assertTrue(el.get(0).equals("2.2.2.2"));
 		assertTrue(el.get(1).equals("3.3.3.3"));
 		assertTrue(el.get(2).equals("4.4.4.4"));
+		
+		logger.debug("Checkpoint 3");
 
 		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 1);
 		assertTrue(el.get(0).equals("1.1.1.1"));
+		
+		logger.debug("Checkpoint 4");
 
 		jd.linkNodes("2.2.2.2", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
 		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 2);
+		
+		logger.debug("Checkpoint 5");
 
 		assertTrue(el.contains("1.1.1.1"));
 		assertTrue(el.contains("3.3.3.3"));
+		
+		logger.debug("Checkpoint 6");
 
 		el = jd.getConnection("3.3.3.3", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 2);
 		assertTrue(el.contains("1.1.1.1"));
 		assertTrue(el.contains("2.2.2.2"));
+		
+		logger.debug("Checkpoint 7");
 
 		el = jd.getConnection("4.4.4.4", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 1);
 		assertTrue(el.contains("1.1.1.1"));
+		
+		logger.debug("Checkpoint 8");
 	}
 
 	public void testRelationCombinations() {
