@@ -166,5 +166,23 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		assertTrue(ontologies.size() == 0);
 		
 	}
+	
+	public void testForInvalidConfig()
+	{
+		TrippleStoreConf cnf = new TrippleStoreConf("a", "b", "CONNECTED_FROM", "host", "host");
+		TrippleStoreConf cnf2 = new TrippleStoreConf("c", "d", "CONNECTED_TO", "host", "host");
+		
+		mappings.clear();
+		mappings.add(cnf);
+		mappings.add(cnf2);
+		
+		assertTrue(mappings.size() == 2);
+		
+		mpr = new TelemetryToGraphMapper(mappings);
+		
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject);	
+		assertTrue(ontologies.size() == 0);
+		
+	}
 
 }
