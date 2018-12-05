@@ -26,8 +26,6 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.minlog.Log;
-
 public class JanusBolt extends BaseRichBolt {
 
 	/**

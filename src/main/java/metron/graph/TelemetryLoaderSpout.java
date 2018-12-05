@@ -62,15 +62,16 @@ public class TelemetryLoaderSpout extends BaseRichSpout {
 
 	}
 
+	@SuppressWarnings("rawtypes")
 	public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
 		this.collector = collector;
 		this.rand = new Random();
 
-		sleep = Integer.parseInt(conf.get("top.spout.generator.sleep").toString());
-		randSize = Integer.parseInt(conf.get("top.spout.generator.randSize").toString());
-		sourceName = conf.get("top.spout.generator.sourceFieldName").toString();
-		destName = conf.get("top.spout.generator.destFieldName").toString();
-		user = conf.get("top.spout.generator.userField").toString();
+		sleep = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.generator.sleep", conf));
+		randSize = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.generator.randSize", conf));
+		sourceName = ConfigHandler.checkForNullConfigAndLoad("top.spout.generator.sourceFieldName", conf);
+		destName = ConfigHandler.checkForNullConfigAndLoad("top.spout.generator.destFieldName", conf);
+		user = ConfigHandler.checkForNullConfigAndLoad("top.spout.generator.userField", conf);
 
 	}
 
