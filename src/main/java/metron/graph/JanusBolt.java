@@ -15,6 +15,7 @@
 
 package metron.graph;
 
+import java.io.File;
 import java.util.Map;
 
 import org.apache.storm.task.OutputCollector;
@@ -48,6 +49,15 @@ public class JanusBolt extends BaseRichBolt {
 		TTL_VALUE = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.ttlDays", conf));
 
 		logger.trace("Initializing Janus DAO...");
+		
+		File file = new File(JANUS_CONFIG);
+	    
+		if(!file.exists())
+		{
+			logger.error("File not found: " + JANUS_CONFIG);
+			System.exit(0);
+		}
+	    
 		jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
 		// jd.createConnectsRelationshipSchema();
 		

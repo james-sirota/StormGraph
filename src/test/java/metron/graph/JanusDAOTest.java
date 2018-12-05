@@ -15,6 +15,8 @@
 
 package metron.graph;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import org.apache.hadoop.hbase.shaded.org.junit.Before;
@@ -42,13 +44,17 @@ public class JanusDAOTest extends TestCase {
 
 	@Before
 	protected void setUp() throws Exception {
-		
-		
+
 		node1type = "test1";
 		node2type = "test2";
-		
+
 		filename = "src/test/resources/janusgraph-cassandra-es.properties";
 
+		File file = new File(filename);
+
+		if (!file.exists()) {
+			throw new FileNotFoundException("Cannot find config file: " + filename);
+		}
 
 	}
 
@@ -59,7 +65,7 @@ public class JanusDAOTest extends TestCase {
 
 	public void testSingleNodeCreation() {
 
-		JanusDAO jd = new JanusDAO(filename,5);
+		JanusDAO jd = new JanusDAO(filename, 5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		assertTrue(jd.vertexExists("1.1.1.1"));
 		assertTrue(jd.vertexExists("2.2.2.2"));
@@ -68,12 +74,12 @@ public class JanusDAOTest extends TestCase {
 		assertFalse(jd.relationExists("1.1.1.2", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
 		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.USES, "2.2.2.2"));
 	}
-	
+
 	public void checkRelationExists() {
-		
-		JanusDAO jd = new JanusDAO(filename,5);
+
+		JanusDAO jd = new JanusDAO(filename, 5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		
+
 		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
@@ -81,16 +87,15 @@ public class JanusDAOTest extends TestCase {
 		assertTrue(el.get(0).equals(EdgeTypes.CONNECTS_TO));
 
 		assertTrue(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
-		
+
 	}
 
 	public void testDuplicateInsertionEdge() {
 
-		JanusDAO jd = new JanusDAO(filename,5);
+		JanusDAO jd = new JanusDAO(filename, 5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		
+
 		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
-		
 
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		el = jd.getEdgesForVertex("1.1.1.1");
@@ -129,60 +134,56 @@ public class JanusDAOTest extends TestCase {
 	}
 
 	public void testNodeEdgeCombinations() {
-		
-		JanusDAO jd = new JanusDAO(filename,5);
+
+		JanusDAO jd = new JanusDAO(filename, 5);
 
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
-		
-
 
 		ArrayList<String> el = jd.getConnection("1.1.1.1", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 3);
-		
-		
 
 		assertTrue(el.get(0).equals("2.2.2.2"));
 		assertTrue(el.get(1).equals("3.3.3.3"));
 		assertTrue(el.get(2).equals("4.4.4.4"));
-		
+
 		logger.debug("Checkpoint 3");
 
 		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 1);
 		assertTrue(el.get(0).equals("1.1.1.1"));
-		
+
 		logger.debug("Checkpoint 4");
 
 		jd.linkNodes("2.2.2.2", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
 		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 2);
-		
+
 		logger.debug("Checkpoint 5");
 
 		assertTrue(el.contains("1.1.1.1"));
 		assertTrue(el.contains("3.3.3.3"));
-		
+
 		logger.debug("Checkpoint 6");
 
 		el = jd.getConnection("3.3.3.3", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 2);
 		assertTrue(el.contains("1.1.1.1"));
 		assertTrue(el.contains("2.2.2.2"));
-		
+
 		logger.debug("Checkpoint 7");
 
 		el = jd.getConnection("4.4.4.4", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 1);
 		assertTrue(el.contains("1.1.1.1"));
-		
+
 		logger.debug("Checkpoint 8");
 	}
 
 	public void testRelationCombinations() {
 
-		JanusDAO jd = new JanusDAO(filename,5);
+		JanusDAO jd = new JanusDAO(filename, 5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		jd.linkNodes("user1", EdgeTypes.USES, "2.2.2.2", node1type, node2type);
 
