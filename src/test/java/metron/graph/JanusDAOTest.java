@@ -54,21 +54,13 @@ public class JanusDAOTest extends TestCase {
 	}
 	
 	@Before
-	public void testConnection()
+	public void checkIfConfigFileExists()
 	{
 		File file = new File(filename);
 		
 		logger.info("Loading config from: " + filename);
-
-		if (!file.exists()) {
-		//	throw new FileNotFoundException("Cannot find config file: " + filename);
-			logger.info("Cannot find config file, exiting: " + filename);
-			System.exit(0);
-		}
 		
-		JanusDAO jd = new JanusDAO(filename, 5);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		assertTrue(jd.vertexExists("1.1.1.1"));
+		assertTrue(file.exists());
 	}
 
 	public void testSchemaCreation() {
