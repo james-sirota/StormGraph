@@ -43,26 +43,29 @@ public class JanusDAOTest extends TestCase {
 	}
 
 	@Before
-	protected void setUp() throws Exception {
+	public void setUp() throws Exception {
 
 		node1type = "test1";
 		node2type = "test2";
 
 		filename = "src/test/resources/janusgraph-cassandra-es.properties";
 
-		File file = new File(filename);
-
-		if (!file.exists()) {
-		//	throw new FileNotFoundException("Cannot find config file: " + filename);
-			logger.error("Cannot find config file: " + filename);
-			System.exit(0);
-		}
 
 	}
 	
 	@Before
-	protected void testConnection()
+	public void testConnection()
 	{
+		File file = new File(filename);
+		
+		logger.info("Loading config from: " + filename);
+
+		if (!file.exists()) {
+		//	throw new FileNotFoundException("Cannot find config file: " + filename);
+			logger.info("Cannot find config file, exiting: " + filename);
+			System.exit(0);
+		}
+		
 		JanusDAO jd = new JanusDAO(filename, 5);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		assertTrue(jd.vertexExists("1.1.1.1"));
