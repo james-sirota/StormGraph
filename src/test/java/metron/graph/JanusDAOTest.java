@@ -67,9 +67,9 @@ public class JanusDAOTest extends TestCase {
 		assertFalse(jd.relationExists("1.1.1.2", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
 		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.USES, "2.2.2.2"));
 	}
-
-	public void testDuplicateInsertionEdge() {
-
+	
+	public void checkRelationExists() {
+		
 		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
@@ -77,6 +77,13 @@ public class JanusDAOTest extends TestCase {
 		assertTrue(el.get(0).equals(EdgeTypes.CONNECTS_TO));
 
 		assertTrue(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
+		
+	}
+
+	public void testDuplicateInsertionEdge() {
+
+		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
+		
 
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
 		el = jd.getEdgesForVertex("1.1.1.1");
@@ -120,7 +127,7 @@ public class JanusDAOTest extends TestCase {
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
 		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
 		
-		logger.debug("Checkpoint 1");
+
 
 		ArrayList<String> el = jd.getConnection("1.1.1.1", EdgeTypes.CONNECTS_TO);
 		assertTrue(el.size() == 3);
