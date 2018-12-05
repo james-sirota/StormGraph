@@ -59,6 +59,14 @@ public class JanusDAOTest extends TestCase {
 		}
 
 	}
+	
+	@Before
+	protected void testConnection()
+	{
+		JanusDAO jd = new JanusDAO(filename, 5);
+		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
+		assertTrue(jd.vertexExists("1.1.1.1"));
+	}
 
 	public void testSchemaCreation() {
 		// jd.createConnectsRelationshipSchema();
