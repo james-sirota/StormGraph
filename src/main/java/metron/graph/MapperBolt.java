@@ -39,9 +39,10 @@ public class MapperBolt extends BaseRichBolt {
 	private static final long serialVersionUID = 3035757397365170506L;
 	private OutputCollector collector;
 	private JSONParser parser;
-	private ArrayList<TrippleStoreConf> mapperConfig;
+	// private ArrayList<TrippleStoreConf> mapperConfig;
 	private String tupleToLookFor;
 	private Logger logger;
+	private TelemetryToGraphMapper mapper;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
@@ -53,18 +54,20 @@ public class MapperBolt extends BaseRichBolt {
 
 		logger.trace("Initializing mapping config...");
 		String mappingString = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.mappings", conf);
-		mapperConfig = ConfigHandler.getAndValidateMappings(mappingString);
+		// mapperConfig = ConfigHandler.getAndValidateMappings(mappingString);
+		mapper = new TelemetryToGraphMapper(ConfigHandler.getAndValidateMappings(mappingString));
+
 		tupleToLookFor = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.tupleToLookFor", conf);
 
 	}
 
-	public void declareOutputFields(OutputFieldsDeclarer declarer) 
-	{
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("source", "edge", "dest", "node1type", "node2type"));
 
 	}
 
-	public void execute(Tuple tuple) {
+	public void execute(Tuple tuple) 
+	{
 
 		try {
 
@@ -73,38 +76,37 @@ public class MapperBolt extends BaseRichBolt {
 
 			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
 
-			logger.debug("PARSED JSON: " + jsonObject);
+			logger.debug("Parsed json ojbect: " + jsonObject);
 
 			if (jsonObject.keySet().size() == 0)
 				throw new IllegalArgumentException(jsonObject + " is not a valid message");
+			
+			ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
 
-			for (int i = 0; i < mapperConfig.size(); i++) {
-				TrippleStoreConf configItem = mapperConfig.get(i);
-				if (jsonObject.containsKey(configItem.getFrom()) && jsonObject.containsKey(configItem.getTo())) {
-
-					logger.debug("MATCHED RULE: " + configItem.printElement());
-					logger.debug("MAPPED OBJECT TO RELATION " + jsonObject.get(configItem.getFrom()) + " " + configItem.getVerb()
-							+ " " + jsonObject.get(configItem.getTo()) + " " + configItem.getFromNodeType() + " "
-							+ configItem.getToNodeType());
-
-					collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
-							jsonObject.get(configItem.getTo()), configItem.getFromNodeType(),
-							configItem.getToNodeType()));
-				} else {
-					if (!jsonObject.containsKey(configItem.getFrom()))
-						logger.debug("No source vertex " + configItem.getFrom() + " in object " + jsonObject);
-
-					if (!jsonObject.containsKey(configItem.getTo()))
-						logger.debug("No dest vertex " + configItem.getTo() + " in object " + jsonObject);
-				}
+			if(ontologyList.isEmpty())
+				logger.debug("No ontologies found for object: " + jsonObject);
+			
+			for(int i = 0; i < ontologyList.size(); i++)
+			{
+				Ontology ont = ontologyList.get(i);
+				
+				logger.trace("Emmiting ontology: " + ont.printElement());
+				
+				collector.emit(new Values(ont.getVertex1(), ont.getVerb(), ont.getVertex2(), ont.getVertex1type(), ont.getVertex2type()));
 			}
+			
+			//collector.emit(new Values(jsonObject.get(configItem.getFrom()), configItem.getVerb(),
+			//jsonObject.get(configItem.getTo()), configItem.getFromNodeType(), configItem.getToNodeType()));
+			
 
-		} catch (ParseException e) 
-		{
-			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
-			e.printStackTrace();
-		}
+		}catch(
 
+	ParseException e)
+	{
+		logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
+		e.printStackTrace();
 	}
+
+}
 
 }

@@ -15,7 +15,13 @@
 
 package metron.graph;
 
-public class EdgeTypes {
+import java.io.Serializable;
+
+public class EdgeTypes implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5857601064882508913L;
 	// if you want to add more, make sure you edit the index
 	public static String CONNECTS_TO = "CONNECTS_TO";
 	public static String USES = "USES";
