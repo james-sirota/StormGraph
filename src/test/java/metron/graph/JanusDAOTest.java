@@ -53,7 +53,9 @@ public class JanusDAOTest extends TestCase {
 		File file = new File(filename);
 
 		if (!file.exists()) {
-			throw new FileNotFoundException("Cannot find config file: " + filename);
+		//	throw new FileNotFoundException("Cannot find config file: " + filename);
+			logger.error("Cannot find config file: " + filename);
+			System.exit(0);
 		}
 
 	}
