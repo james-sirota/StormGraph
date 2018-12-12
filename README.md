@@ -1,5 +1,5 @@
 # StormGraph
-Graph capability extension for Apache Metron
+This project is meant to be a capability extension on top of Apache Metron.  It plugs into the indexing topics, maps incoming messages to ontologies, and ingests them into JanusGraph
 
 # Getting Started
 
@@ -23,8 +23,6 @@ name = mgmt.getOrCreatePropertyKey('valueKey')
 mgmt.buildIndex('byNameComposite', Vertex.class).addKey(name).buildCompositeIndex()
 mgmt.commit()
 ManagementSystem.awaitGraphIndexStatus(g, 'byNameComposite').call()
-
-
 ```
 
 The index creation will take a few mins.  Next you want to test and make sure the index is working
@@ -61,5 +59,9 @@ Two graph ontologies will be generated.  9.71.7.24 connectsTo 108.54.40.12 and u
 g.traversal().V().has('valueKey', 'user_53').hasLabel('user').outE('uses').inV().has('valueKey', '9.71.7.24')
 g.traversal().V().has('valueKey', '9.71.7.24').hasLabel('host').outE('connectsTo').inV().has('valueKey', '108.54.40.12')
 ```
+# Starting the topology
 
+Run the start script:
+```
 startGraphTopology.sh
+```
