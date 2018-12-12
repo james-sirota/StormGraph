@@ -17,9 +17,17 @@ package metron.graph;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.shaded.org.junit.Before;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.janusgraph.core.JanusGraph;
+import org.janusgraph.core.JanusGraphFactory;
+import org.janusgraph.core.JanusGraphTransaction;
+import org.janusgraph.diskstorage.BackendException;
+import org.junit.FixMethodOrder;
+import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +35,15 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JanusDAOTest extends TestCase {
 
 	private String node1type;
 	private String node2type;
 	private static final Logger logger = LoggerFactory.getLogger(JanusDAOTest.class);
 	String filename;
+	JanusGraph g;
+	JanusDAO jd;
 
 	public JanusDAOTest(String testName) {
 		super(testName);
@@ -43,187 +54,157 @@ public class JanusDAOTest extends TestCase {
 	}
 
 	@Before
-	public void setUp() throws Exception {
+	public synchronized void setUp() throws Exception {
 
 		node1type = "test1";
 		node2type = "test2";
 
 		filename = "src/test/resources/janusgraph-cassandra-es.properties";
+		g = JanusGraphFactory.open(filename);
+		jd = new JanusDAO(filename, 5);
 
+		File file = new File(filename);
+
+		logger.info("Loading config from: " + filename);
+
+		if (!file.exists()) {
+			logger.error("Cannot find: " + filename);
+			throw new FileNotFoundException("Cannot find: " + filename);
+		}
+	}
+
+	public synchronized void testA_SingleNodeCreation() throws ConfigurationException, InterruptedException {
+
+		JanusGraphTransaction tx = g.newTransaction();
+
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.12",
+				"test_connectsTo");
+
+		Long result = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type)
+				.outE("test_connectsTo").count().next();
+		 assertTrue(result == 1);
+
+		String label1 = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type).label().next();
+		assertTrue(label1.equals(node1type));
+
+		String edgeLabel = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type).outE().next()
+				.label();
+		assertTrue(edgeLabel.equals("test_connectsTo"));
+
+		String label2 = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type).outE().inV()
+				.label().next();
+
+		assertTrue(label2.equals(node2type));
+
+		String ip = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type).outE().inV().next()
+				.value("test_ipAddress").toString();
+
+		assertTrue(ip.equals("test_12.12.12.12"));
+		tx.commit();
+		tx.close();
+
+	}
+
+	public synchronized void testB_DuplicateNodeCreation() throws ConfigurationException, InterruptedException {
+
+		JanusGraphTransaction tx = g.newTransaction();
+		
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.12",
+				"test_connectsTo");
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.12",
+				"test_connectsTo");
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.12",
+				"test_connectsTo");
+
+		Long result = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type)
+				.outE("test_connectsTo").count().next();
+		assertTrue(result == 1);
+		tx.commit();
+		tx.close();
+	}
+
+	public synchronized void testC_DifferentNode2() throws ConfigurationException, InterruptedException {
+
+		JanusGraphTransaction tx = g.newTransaction();
+
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.13",
+				"test_connectsTo");
+
+		Long result = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type)
+				.outE("test_connectsTo").count().next();
+		assertTrue(result == 2);
+
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.1", "test_ipAddress", "test_12.12.12.13",
+				"test_connectsTo");
+		
+		result = tx.traversal().V().has("test_ipAddress", "test_1.1.1.1").hasLabel(node1type)
+				.outE("test_connectsTo").count().next();
+		
+		assertTrue(result == 2);
+
+
+		tx.commit();
+		tx.close();
+
+	}
+
+	public synchronized void testD_DifferentNode1() throws ConfigurationException, InterruptedException {
+
+		JanusGraphTransaction tx = g.newTransaction();
+		jd.linkNodes(node1type, node2type, "test_ipAddress", "test_1.1.1.14", "test_ipAddress", "test_12.12.12.13",
+				"test_connectsTo");
+
+		Long result = tx.traversal().V().has("test_ipAddress", "test_1.1.1.14").hasLabel(node1type)
+				.outE("test_connectsTo").count().next();
+		assertTrue(result == 1);
+
+		GraphTraversal<Vertex, Vertex> a = tx.traversal().V().has("test_ipAddress", "test_1.1.1.14").hasLabel(node1type)
+				.outE().inV();
+
+		assertTrue(a.next().value("test_ipAddress").toString().equals("test_12.12.12.13"));
+		
+		tx.commit();
+		tx.close();
 
 	}
 	
-	@Before
-	public void checkIfConfigFileExists()
-	{
-		File file = new File(filename);
+	public synchronized void testE_TestSecondRelationType() throws ConfigurationException, InterruptedException {
+
+		JanusGraphTransaction tx = g.newTransaction();
 		
-		logger.info("Loading config from: " + filename);
+		jd.linkNodes("user", node2type, "username", "test_user_55", "test_ipAddress", "test_12.12.12.13",
+				"test_uses");
+
+		Long result = tx.traversal().V().has("username", "test_user_55").hasLabel("user")
+				.outE("test_uses").count().next();
+		assertTrue(result == 1);
+
+		GraphTraversal<Vertex, Vertex> a = tx.traversal().V().has("username", "test_user_55").hasLabel("user")
+				.outE().inV();
+
+		assertTrue(a.next().value("test_ipAddress").toString().equals("test_12.12.12.13"));
 		
-		assertTrue(file.exists());
-	}
-
-	public void testSchemaCreation() {
-		// jd.createConnectsRelationshipSchema();
-		assertTrue(true);
-	}
-
-	public void testSingleNodeCreation() {
-
-		JanusDAO jd = new JanusDAO(filename, 5);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		assertTrue(jd.vertexExists("1.1.1.1"));
-		assertTrue(jd.vertexExists("2.2.2.2"));
-		assertFalse(jd.vertexExists("1.1.1.2"));
-		assertTrue(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
-		assertFalse(jd.relationExists("1.1.1.2", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
-		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.USES, "2.2.2.2"));
-	}
-
-	public void checkRelationExists() {
-
-		JanusDAO jd = new JanusDAO(filename, 5);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-
-		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 1);
-		assertTrue(el.get(0).equals(EdgeTypes.CONNECTS_TO));
-
-		assertTrue(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2"));
+		
+		Long inConnects = tx.traversal().V().has("test_ipAddress", "test_12.12.12.13").inE("test_connectsTo").count().next();
+		
+		assertTrue(inConnects == 2);
+		
+		Long inUsers = tx.traversal().V().has("test_ipAddress", "test_12.12.12.13").inE("test_uses").count().next();
+		
+		assertTrue(inUsers == 1);
+		
+		tx.commit();
+		tx.close();
 
 	}
 
-	public void testDuplicateInsertionEdge() {
+	public synchronized void testZ_CleanUp() throws BackendException {
+		JanusGraphTransaction tx = g.newTransaction();
+		tx.traversal().V().propertyMap("test_ipAddress").V().drop().iterate();
+		tx.traversal().E().has("test_connectsTo").drop().iterate();
 
-		JanusDAO jd = new JanusDAO(filename, 5);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-
-		ArrayList<String> el = jd.getEdgesForVertex("1.1.1.1");
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 1);
-
-		assertFalse(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3"));
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 2);
-
-		el = jd.getEdgesForVertex("3.3.3.3");
-		assertTrue(el.size() == 1);
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 2);
-
-		assertTrue(jd.relationExists("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3"));
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 3);
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "5.5.5.5", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 4);
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "5.5.5.5", node1type, node2type);
-		el = jd.getEdgesForVertex("1.1.1.1");
-		assertTrue(el.size() == 4);
-
-		el = jd.getEdgesForVertex("5.5.5.5");
-		assertTrue(el.size() == 1);
-
-	}
-
-	public void testNodeEdgeCombinations() {
-
-		JanusDAO jd = new JanusDAO(filename, 5);
-
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
-
-		ArrayList<String> el = jd.getConnection("1.1.1.1", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 3);
-
-		assertTrue(el.get(0).equals("2.2.2.2"));
-		assertTrue(el.get(1).equals("3.3.3.3"));
-		assertTrue(el.get(2).equals("4.4.4.4"));
-
-		logger.debug("Checkpoint 3");
-
-		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 1);
-		assertTrue(el.get(0).equals("1.1.1.1"));
-
-		logger.debug("Checkpoint 4");
-
-		jd.linkNodes("2.2.2.2", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
-		el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 2);
-
-		logger.debug("Checkpoint 5");
-
-		assertTrue(el.contains("1.1.1.1"));
-		assertTrue(el.contains("3.3.3.3"));
-
-		logger.debug("Checkpoint 6");
-
-		el = jd.getConnection("3.3.3.3", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 2);
-		assertTrue(el.contains("1.1.1.1"));
-		assertTrue(el.contains("2.2.2.2"));
-
-		logger.debug("Checkpoint 7");
-
-		el = jd.getConnection("4.4.4.4", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 1);
-		assertTrue(el.contains("1.1.1.1"));
-
-		logger.debug("Checkpoint 8");
-	}
-
-	public void testRelationCombinations() {
-
-		JanusDAO jd = new JanusDAO(filename, 5);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "2.2.2.2", node1type, node2type);
-		jd.linkNodes("user1", EdgeTypes.USES, "2.2.2.2", node1type, node2type);
-
-		ArrayList<String> el = jd.getConnection("2.2.2.2", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 1);
-		assertTrue(el.contains("1.1.1.1"));
-
-		el = jd.getConnection("2.2.2.2", EdgeTypes.USES);
-		assertTrue(el.size() == 1);
-		System.out.println(el.get(0));
-		assertTrue(el.contains("user1"));
-
-		jd.linkNodes("user1", EdgeTypes.USES, "1.1.1.1", node1type, node2type);
-		el = jd.getConnection("user1", EdgeTypes.USES);
-		assertTrue(el.size() == 2);
-		assertTrue(el.contains("1.1.1.1"));
-		assertTrue(el.contains("2.2.2.2"));
-
-		jd.linkNodes("user2", EdgeTypes.USES, "3.3.3.3", node1type, node2type);
-		jd.linkNodes("user3", EdgeTypes.USES, "3.3.3.3", node1type, node2type);
-		jd.linkNodes("user4", EdgeTypes.USES, "3.3.3.3", node1type, node2type);
-		jd.linkNodes("1.1.1.1", EdgeTypes.CONNECTS_TO, "3.3.3.3", node1type, node2type);
-		jd.linkNodes("3.3.3.3", EdgeTypes.CONNECTS_TO, "4.4.4.4", node1type, node2type);
-
-		el = jd.getConnection("3.3.3.3", EdgeTypes.USES);
-		assertTrue(el.size() == 3);
-		assertTrue(el.contains("user2"));
-		assertTrue(el.contains("user3"));
-		assertTrue(el.contains("user4"));
-
-		el = jd.getConnection("3.3.3.3", EdgeTypes.CONNECTS_TO);
-		assertTrue(el.size() == 2);
-		assertTrue(el.contains("1.1.1.1"));
-		assertTrue(el.contains("4.4.4.4"));
-
+		tx.commit();
+		tx.close();
 	}
 
 }

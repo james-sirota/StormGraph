@@ -15,193 +15,141 @@
 
 package metron.graph;
 
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.File;
 
-
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.T;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
-import org.janusgraph.core.Multiplicity;
-import org.janusgraph.core.PropertyKey;
-import org.janusgraph.core.schema.ConsistencyModifier;
-import org.janusgraph.core.schema.JanusGraphIndex;
-import org.janusgraph.core.schema.JanusGraphManagement;
+import org.janusgraph.core.JanusGraphVertex;
 
-public class JanusDAO implements Serializable{
+public class JanusDAO {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8968557226200658053L;
-	private String CONFIG_FILE;
-	private String KEY_ID;
+
+
+
 	private JanusGraph g;
-	private JanusGraphManagement management;
-	private GraphTraversalSource traversal;
+
 	private int DEFAULT_TTL_DAYS;
+	
+	protected String CONFIG_FILE;
+	protected String KEY_ID = "nodeName";
+	protected String GLOBAL_VERTEX_INDEX_NAME = "MetronGraphVertex";
+	protected String GLOBAL_EDGE_INDEX_NAME = "MetronGraphEdge";
 
 	Logger logger = LogManager.getLogger(JanusDAO.class);
 
-	public JanusDAO(String configFIle, int ttlDays) {
+	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
 		CONFIG_FILE = configFIle;
-		g = JanusGraphFactory.open(CONFIG_FILE);
-		management = g.openManagement();
-		traversal = g.traversal();
-		KEY_ID = "nodeName";
+
+		File file = new File(CONFIG_FILE);
+
+		logger.info("Loading config from: " + CONFIG_FILE);
+
+		if (!file.exists()) {
+			logger.error("Cannot find: " + CONFIG_FILE);
+			System.exit(0);
+		}
+		Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
+
+		g = JanusGraphFactory.open(conf);
+
+
 		DEFAULT_TTL_DAYS = ttlDays;
 
 	}
 
-	public void createConnectsRelationshipSchema() {
 
-		// index by KEY_ID, make composite
-		final PropertyKey src = management.makePropertyKey(KEY_ID).dataType(String.class).make();
-		management.setTTL(src, Duration.ofDays(DEFAULT_TTL_DAYS));
-		JanusGraphManagement.IndexBuilder srcIdx = management.buildIndex(KEY_ID, Vertex.class).addKey(src);
-		srcIdx.unique();
-		JanusGraphIndex srcIndex = srcIdx.buildCompositeIndex();
-		management.setConsistency(srcIndex, ConsistencyModifier.LOCK);
 
-		// index edges
-		final PropertyKey connects = management.makePropertyKey(EdgeTypes.CONNECTS_TO).dataType(Integer.class).make();
-		management.setTTL(connects, Duration.ofDays(DEFAULT_TTL_DAYS));
-		management.buildIndex(EdgeTypes.CONNECTS_TO, Edge.class).addKey(connects).buildCompositeIndex();
-		management.makeEdgeLabel(EdgeTypes.CONNECTS_TO).multiplicity(Multiplicity.MULTI).make();
 
-		final PropertyKey uses = management.makePropertyKey(EdgeTypes.USES).dataType(Integer.class).make();
-		management.setTTL(uses, Duration.ofDays(DEFAULT_TTL_DAYS));
-		management.buildIndex(EdgeTypes.USES, Edge.class).addKey(uses).buildCompositeIndex();
-		management.makeEdgeLabel(EdgeTypes.USES).multiplicity(Multiplicity.MULTI).make();
-
-		management.commit();
-
-	}
-
-	public void linkNodes(String source, String relation, String dest, String node1type, String node2type) {
-		Vertex src;
-		Vertex dst;
-
-		if (!relationExists(source, relation, dest)) {
+	public synchronized void linkNodes(String node1Label, String node2Label, String node1PropertyKey, String node1PropertyValue,
+			String node2PropertyKey, String node2PropertyValue, String edgeName) {
+		
+		String currentTime = String.valueOf(System.currentTimeMillis());
+		JanusGraphVertex a = null;
+		JanusGraphVertex b = null;
+		
+		boolean node1IsNew = false;
+		boolean node2IsNew = false;
+		
+		JanusGraphTransaction tx = g.newTransaction();
+		
+		System.out.println("Examining vertex: " + node1Label + " : "   + node1PropertyKey + " : "   + node1PropertyValue);
+		System.out.println("Examining vertex:: " +node2Label + " : "   + node2PropertyKey + " : "   + node2PropertyValue);
+		
+		
+		boolean sourceNodeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).hasNext();
+		if(!sourceNodeExists)
+		{
+			logger.debug("Creating new source node because does not exist: " + node1Label + " : " + node1PropertyKey + " : " + node1PropertyValue);
 			
-			logger.trace("Relation does not exist: " + source + " -> " + relation + " -> " + dest);
+			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
+			System.out.println("-----CREATED A: " + node1PropertyValue + " with node id " + a.longId());
 			
-			if (!vertexExists(source)) {
-				logger.trace("New Vertex Detected: " + source);
-				JanusGraphTransaction tx = g.newTransaction();
-				src = tx.addVertex(KEY_ID, source, T.label, node1type);
-				tx.commit();
+			node1IsNew = true;
+
+		}
+		
+		boolean destNodeExists = tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).hasNext();
+	
+		
+		if(!destNodeExists)
+		{
+			logger.debug("Creating new dest node because does not exist: " + node2Label + " : " + node2PropertyKey + " : " + node2PropertyValue);
+			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
+			System.out.println("-----CREATED B: " + node2PropertyValue + " with node id " + b.longId());
+			
+			node2IsNew = true;
+	
+		}
+		a = (JanusGraphVertex) tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).next();		
+		b = (JanusGraphVertex) tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).next();
+
+		if(node1IsNew && node2IsNew)
+		{
+			logger.debug("Both nodes are new " + node1PropertyValue + " : " + node2PropertyValue);
+			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+		}
+		else if(node1IsNew && !node2IsNew)
+		{
+			logger.debug("Only node1 is new " + node1PropertyValue + " : " + node2PropertyValue);
+			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+		}
+		else if(!node1IsNew && node2IsNew)
+		{
+			logger.debug("Only node2 is new " + node1PropertyValue + " : " + node2PropertyValue);
+			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+		}
+		else if(!node1IsNew && !node2IsNew)
+		{
+			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
+			logger.debug("Both nodes are not new, does the edge between them already exist?: " + edgeExists);
+			
+			if(!edgeExists)
+			{
+				logger.debug("Creating a new edge between " + node1PropertyValue + " : " + node2PropertyValue);
+				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
 			}
-
-			if (!vertexExists(dest)) {
-				logger.trace("New Vertex Detected: " + dest);
-				JanusGraphTransaction tx = g.newTransaction();
-				dst = tx.addVertex(KEY_ID, dest, T.label, node2type);
-				tx.commit();
+			else
+			{
+				//TODO figure out how to set TTL
 			}
-
-			JanusGraphTransaction tx = g.newTransaction();
-			
-			logger.trace("Creating vertex: " + KEY_ID + " -> " + source);
-			src = traversal.V().has(KEY_ID, source).next();
-			
-			logger.trace("Creating vertex: " + KEY_ID + " -> " + dest);
-			dst = traversal.V().has(KEY_ID, dest).next();
-
-			logger.trace("Creating edge: " + relation);
-			src.addEdge(relation, dst).bothVertices();
-
-			tx.commit();
-			tx.close();
-		} else {
-			// [TODO]if relation exists, recreate it to reset the TTL
-			logger.trace("Relation already exists: " + source + " -> " + relation + " -> " + dest);
 		}
+		
 
+		tx.commit();
+		tx.close();
+		
 	}
 
-	public ArrayList<String> getEdgesForVertex(String hostname) {
-
-		ArrayList<String> edgeList = new ArrayList<String>();
-		Vertex fromNode = traversal.V().has(KEY_ID, hostname).next();
-
-		Iterator<Edge> edg = fromNode.edges(Direction.BOTH);
-
-		while (edg.hasNext()) {
-			String e = edg.next().label();
-			logger.trace("New edge found: " + e);
-			edgeList.add(e);
-
-		}
-
-		return edgeList;
-
-	}
-
-	public boolean relationExists(String hostname, String edge, String dst) {
-
-		GraphTraversal<Vertex, Vertex> fromNode = traversal.V().has(KEY_ID, hostname);
-
-		if (!fromNode.hasNext())
-			return false;
-
-		GraphTraversal<Vertex, Vertex> toNode = traversal.V().has(KEY_ID, dst);
-
-		if (!toNode.hasNext())
-			return false;
-
-		if (!fromNode.next().edges(Direction.OUT, edge).hasNext())
-			return false;
-
-		if (!toNode.next().edges(Direction.IN, edge).hasNext())
-			return false;
-
-		return true;
-
-	}
-
-	public boolean vertexExists(String hostname) {
-
-		if (traversal.V().has(KEY_ID, hostname).hasNext())
-			return true;
-		else
-			return false;
-	}
-
-	public ArrayList<String> getConnection(String hostname, String edge) {
-		ArrayList<String> nodeList = new ArrayList<String>();
-		GraphTraversal<Vertex, Vertex> fromNode = traversal.V().has(KEY_ID, hostname);
-
-		Vertex nn = fromNode.next();
-
-		Iterator<Edge> ee1 = nn.edges(Direction.OUT, edge);
-		while (ee1.hasNext()) {
-			String nName = (String) ee1.next().inVertex().value(KEY_ID);
-
-			if (!nName.equals(hostname))
-				nodeList.add(nName);
-		}
-
-		Iterator<Edge> ee2 = nn.edges(Direction.IN, edge);
-		while (ee2.hasNext()) {
-			String nName = (String) ee2.next().outVertex().value(KEY_ID);
-
-			if (!nName.equals(hostname))
-				nodeList.add(nName);
-		}
-
-		return nodeList;
-
+	public boolean nodeExists(String key1, String prop1, String key2, String prop2)
+	{
+		return true; 
 	}
 
 }

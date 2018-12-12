@@ -18,6 +18,7 @@ package metron.graph;
 import java.io.File;
 import java.util.Map;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -25,6 +26,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
 
 public class JanusBolt extends BaseRichBolt {
 
@@ -58,7 +61,12 @@ public class JanusBolt extends BaseRichBolt {
 			System.exit(0);
 		}
 	    
-		jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
+		try {
+			jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
+		} catch (ConfigurationException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		// jd.createConnectsRelationshipSchema();
 		
 		logger.debug("Janus bolt initialized...");
@@ -73,8 +81,8 @@ public class JanusBolt extends BaseRichBolt {
 		Ontology ont = (Ontology) tuple.getValueByField(FIELD_TO_LOOK_FOR);
 
 		logger.debug("Graphing ontology: " + ont.printElement());
-
-		jd.linkNodes(ont.getVertex1(), ont.getVerb(), ont.getVertex2(), ont.getVertex1type(), ont.getVertex2type());
+		
+		jd.linkNodes(ont.getVertex1type(), ont.getVertex2type(), "valueKey", ont.getVertex1(), "valueKey", ont.getVertex2(), ont.getVerb());
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
