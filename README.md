@@ -65,3 +65,6 @@ Run the start script:
 ```
 startGraphTopology.sh
 ```
+# DISCLAMER
+
+This is a POC-grade proof of capability.  At this point it is not meant to run in production nor be included with the Metron project.  Absolutely no support is provided. USE AT YOUR OWN RISK
