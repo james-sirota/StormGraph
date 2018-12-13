@@ -67,6 +67,8 @@ public class GraphTopology {
 
 		} else {
 
+			logger.info("Setting kafka spout...");
+			
 			String bootStrapServers = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.bootStrapServers", conf);
 			String topic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
 			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
@@ -112,6 +114,8 @@ public class GraphTopology {
 			logger.trace("Finished initializing spoutConf");
 
 			builder.setSpout(spoutName, new KafkaSpout<String, String>(spoutConf), spoutParallelism);
+			
+			logger.info("Finished setting kafka spout...");
 
 		}
 
