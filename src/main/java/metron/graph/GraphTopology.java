@@ -26,8 +26,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.AlreadyAliveException;
-import org.apache.storm.generated.Nimbus.Client;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
@@ -36,9 +34,7 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +155,7 @@ public class GraphTopology {
 		    conf.put(Config.STORM_ZOOKEEPER_PORT,2181);
 
 		
-
+		    System.out.println("[METRON] Starting remote topology submission...");
 		    submitLocalTopologyWay1(topologyName, conf, builder.createTopology(), args[1]);
 
 		}
