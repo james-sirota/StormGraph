@@ -155,7 +155,7 @@ public class GraphTopology {
 			
 		    conf.put(Config.NIMBUS_HOST,host);   
 		    conf.put(Config.NIMBUS_THRIFT_PORT, port);
-		    conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost")); 
+		    conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost","localhost","localhost")); 
 		    conf.put(Config.STORM_ZOOKEEPER_PORT,2181);
 
 		
