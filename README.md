@@ -76,6 +76,12 @@ And change the pom dependency for Storm artifacts to compile
 
 The topology has 2 spouts, but only one can be specified as active.  First, there is a generatorSpout, which is used for load testing.  Second, there is a kafkaSpout which is an unmodified Storm kafka spout.  A message emmitted from a spout is assumed to be a JSON.  Then there is a mapper bolt that will map the JSON fields to an ontology with a relation.  Last, there is a JanusBolt that will write the ontologies into Janus 
 
+Component      | Function
+-------------  | -------------
+GeneratorBolt  | Generates synthetic data and can be configured to put a load on your system to test your indexes (by default turned off)
+Kafka Spout    | Generic kafka spout that shipps with Storm (assumes a flat Map/JSON as input)
+MapperBolt     | Maps the JSON message to a graph ontology (using mappings in the graphtopology_config.conf)
+JanusBolt      | Writes telemetry to Janus using a variety of stores and indexes, defined by (top.graphbolt.backEndConfigLocation in graphtopology_config.conf)
 
 # Important Settings
 
