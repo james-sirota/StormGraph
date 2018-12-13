@@ -47,8 +47,6 @@ public class GraphTopology {
 		if (args[0] == null)
 			System.out.println("Please specify the location of the file graphtopology_config.conf");
 
-		if (args[1] == null)
-			System.out.println("Please specify the location of the topology jar file");
 
 		Config conf = readConfigFromFile(args[0], logger);
 
@@ -144,21 +142,7 @@ public class GraphTopology {
 		if (localDeploy) {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(topologyName, conf, builder.createTopology());
-		} else {
-
-			String host = "localhost";
-			int port = 6627;
-			
-		    conf.put(Config.NIMBUS_HOST,host);   
-		    conf.put(Config.NIMBUS_THRIFT_PORT, port);
-		    conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost","localhost","localhost")); 
-		    conf.put(Config.STORM_ZOOKEEPER_PORT,2181);
-
-		
-		    System.out.println("[METRON] Starting remote topology submission...");
-		    submitLocalTopologyWay1(topologyName, conf, builder.createTopology(), args[1]);
-
-		}
+		} 
 
 	}
 
@@ -184,25 +168,6 @@ public class GraphTopology {
 		br.close();
 
 		return conf;
-	}
-	
-	public static void submitLocalTopologyWay1(String topologyName, Config topologyConf,  StormTopology topology, String localJar) {
-	    try {
-	        //get default storm config
-	        Map defaultStormConf = Utils.readStormConfig();
-	        defaultStormConf.putAll(topologyConf);
-
-	        //set JAR
-	        System.setProperty("storm.jar",localJar);
-
-	        //submit topology
-	        StormSubmitter.submitTopology(topologyName, defaultStormConf, topology);
-
-	    } catch (Exception e) {
-	        String errorMsg = "can't deploy topology " + topologyName + ", " + e.getMessage();
-	        System.out.println(errorMsg);
-	        e.printStackTrace();
-	    } 
 	}
 
 }
