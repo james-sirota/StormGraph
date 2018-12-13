@@ -19,12 +19,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class GraphTypes implements Serializable{
+
+
+	
 	/**
 	 * 
 	 */
-	private final long serialVersionUID = 5857601064882508913L;
-
-	
+	private static final long serialVersionUID = 8767342937103255700L;
 	private ArrayList<String> edgeTypes = new ArrayList<String>();
 	private ArrayList<String> vertexTypes = new ArrayList<String>();
 	

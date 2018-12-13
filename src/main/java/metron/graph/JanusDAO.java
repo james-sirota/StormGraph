@@ -28,17 +28,13 @@ import org.janusgraph.core.JanusGraphVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class JanusDAO {
 
 	private JanusGraph g;
 
-	private int DEFAULT_TTL_DAYS;
+	// private int DEFAULT_TTL_DAYS;
 
 	private String CONFIG_FILE;
-	private String KEY_ID = "nodeName";
-	private String GLOBAL_VERTEX_INDEX_NAME = "MetronGraphVertex";
-	private String GLOBAL_EDGE_INDEX_NAME = "MetronGraphEdge";
 	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
 
 	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
@@ -56,7 +52,7 @@ public class JanusDAO {
 
 		g = JanusGraphFactory.open(conf);
 
-		DEFAULT_TTL_DAYS = ttlDays;
+		// DEFAULT_TTL_DAYS = ttlDays; TODO: implement this later
 
 	}
 
@@ -72,8 +68,8 @@ public class JanusDAO {
 
 		JanusGraphTransaction tx = g.newTransaction();
 
-		System.out.println("Examining vertex: " + node1Label + " : " + node1PropertyKey + " : " + node1PropertyValue);
-		System.out.println("Examining vertex:: " + node2Label + " : " + node2PropertyKey + " : " + node2PropertyValue);
+		logger.debug("Examining vertex: " + node1Label + " : " + node1PropertyKey + " : " + node1PropertyValue);
+		logger.debug("Examining vertex: " + node2Label + " : " + node2PropertyKey + " : " + node2PropertyValue);
 
 		boolean sourceNodeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
 				.hasNext();
@@ -82,7 +78,7 @@ public class JanusDAO {
 					+ " : " + node1PropertyValue);
 
 			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
-			System.out.println("-----CREATED A: " + node1PropertyValue + " with node id " + a.longId());
+			logger.debug("Created an outVertex: " + node1PropertyValue + " with node id " + a.longId());
 
 			node1IsNew = true;
 
@@ -95,7 +91,7 @@ public class JanusDAO {
 			logger.debug("Creating new dest node because does not exist: " + node2Label + " : " + node2PropertyKey
 					+ " : " + node2PropertyValue);
 			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
-			System.out.println("-----CREATED B: " + node2PropertyValue + " with node id " + b.longId());
+			logger.debug("Created an inVertex:" + node2PropertyValue + " with node id " + b.longId());
 
 			node2IsNew = true;
 
