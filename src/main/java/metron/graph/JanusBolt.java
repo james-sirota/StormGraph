@@ -24,8 +24,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class JanusBolt extends BaseRichBolt {
 
@@ -44,7 +43,7 @@ public class JanusBolt extends BaseRichBolt {
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		logger = LoggerFactory.getLogger(JanusBolt.class);
+		logger = Logger.getLogger(JanusBolt.class);
 
 		logger.trace("Initializing janus bolt...");
 

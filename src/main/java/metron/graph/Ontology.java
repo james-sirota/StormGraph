@@ -17,8 +17,7 @@ package metron.graph;
 
 import java.io.Serializable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class Ontology implements Serializable{
 
@@ -31,7 +30,7 @@ public class Ontology implements Serializable{
 	private String vertex1type;
 	private String vertex2type;
 	private String verb;
-	private static final Logger logger = LoggerFactory.getLogger(Ontology.class);
+	private static final Logger logger = Logger.getLogger(Ontology.class);
 
 	public Ontology(String vertex1, String verb, String vertex2, String vertex1type, String vertex2type) {
 		

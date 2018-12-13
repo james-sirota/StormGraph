@@ -19,8 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class TelemetryToGraphMapper implements Serializable{
 	/**
@@ -28,7 +27,7 @@ public class TelemetryToGraphMapper implements Serializable{
 	 */
 	private static final long serialVersionUID = -5705431851614623697L;
 	private ArrayList<TrippleStoreConf> mapperConfig;
-	private static final Logger logger = LoggerFactory.getLogger(TelemetryToGraphMapper.class);
+	private static final Logger logger = Logger.getLogger(TelemetryToGraphMapper.class);
 
 	public TelemetryToGraphMapper(ArrayList<TrippleStoreConf> mapconfig) {
 		mapperConfig = mapconfig;

@@ -28,8 +28,7 @@ import org.apache.storm.tuple.Values;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class MapperBolt extends BaseRichBolt {
 
@@ -47,7 +46,7 @@ public class MapperBolt extends BaseRichBolt {
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		logger = LoggerFactory.getLogger(MapperBolt.class);
+		logger = Logger.getLogger(MapperBolt.class);
 
 		logger.trace("Initializing parser...");
 		parser = new JSONParser();

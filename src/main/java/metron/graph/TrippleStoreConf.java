@@ -17,8 +17,7 @@ package metron.graph;
 
 import java.io.Serializable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class TrippleStoreConf implements Serializable{
 
@@ -32,7 +31,7 @@ public class TrippleStoreConf implements Serializable{
 	private String node2name;
 	private String node2type;
 
-	private static final Logger logger = LoggerFactory.getLogger(TrippleStoreConf.class);
+	private static final Logger logger = Logger.getLogger(TrippleStoreConf.class);
 
 	public TrippleStoreConf(String node1name, String node2name, String verbname, String node1type, String node2type) {
 

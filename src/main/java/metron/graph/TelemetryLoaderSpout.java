@@ -26,13 +26,12 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class TelemetryLoaderSpout extends BaseRichSpout {
 
 	private static final long serialVersionUID = 1L;
-	private static final Logger logger = LoggerFactory.getLogger(TelemetryLoaderSpout.class);
+	private static final Logger logger = Logger.getLogger(TelemetryLoaderSpout.class);
 	private SpoutOutputCollector collector;
 	private Random rand;
 	private int sleep;

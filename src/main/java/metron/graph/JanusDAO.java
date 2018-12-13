@@ -25,8 +25,7 @@ import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 import org.janusgraph.core.JanusGraphVertex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 public class JanusDAO {
 
@@ -38,7 +37,7 @@ public class JanusDAO {
 	private String KEY_ID = "nodeName";
 	private String GLOBAL_VERTEX_INDEX_NAME = "MetronGraphVertex";
 	private String GLOBAL_EDGE_INDEX_NAME = "MetronGraphEdge";
-	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);;
+	private Logger logger = Logger.getLogger(ConfigHandler.class);;
 
 	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
 		CONFIG_FILE = configFIle;
