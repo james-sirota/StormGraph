@@ -19,11 +19,14 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.Nimbus.Client;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
@@ -31,6 +34,9 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +49,17 @@ public class GraphTopology {
 		if (args[0] == null)
 			System.out.println("Please specify the location of the file graphtopology_config.conf");
 
+		if (args[1] == null)
+			System.out.println("Please specify the location of the topology jar file");
+
 		Config conf = readConfigFromFile(args[0], logger);
 
 		TopologyBuilder builder = new TopologyBuilder();
 
 		String spoutName = ConfigHandler.checkForNullConfigAndLoad("top.spout.name", conf);
 		int spoutParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.parallelism", conf));
-		boolean generateData = Boolean.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.generatorSpoutEnabled", conf));
+		boolean generateData = Boolean
+				.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.generatorSpoutEnabled", conf));
 
 		if (generateData) {
 
@@ -66,9 +76,12 @@ public class GraphTopology {
 			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
 			Long offsetCommitPeriodMs = Long
 					.parseLong(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf));
-			int initialDelay = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
-			int delayPeriod = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
-			int maxDelay = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
+			int initialDelay = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
+			int delayPeriod = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
+			int maxDelay = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
 			int maxUncommittedOffsets = Integer
 					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.maxUncommittedOffsets", conf));
 
@@ -84,7 +97,8 @@ public class GraphTopology {
 			logger.trace("Finished initializing kafkaSpoutRetryService");
 
 			String tupleFieldTopic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldTopic", conf);
-			String tupleFieldPartition = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition", conf);
+			String tupleFieldPartition = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition",
+					conf);
 			String tupleFieldOffset = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
 			String tupleFieldKey = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
 			String tupleFieldValue = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
@@ -106,13 +120,15 @@ public class GraphTopology {
 		}
 
 		String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
-		int mapperboltParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
+		int mapperboltParallelism = Integer
+				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
 		logger.debug("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
 		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
 
 		String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
-		int graphBoltParallelism = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
+		int graphBoltParallelism = Integer
+				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
 
 		logger.debug("Initializing " + graphBoltName + " with parallelism " + graphBoltParallelism);
 		builder.setBolt(graphBoltName, new JanusBolt(), graphBoltParallelism).shuffleGrouping(mapperBoltName);
@@ -131,7 +147,30 @@ public class GraphTopology {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(topologyName, conf, builder.createTopology());
 		} else {
-			StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, builder.createTopology());
+
+			String host = "localhost";
+			int port = 6627;
+
+			conf.put(Config.NIMBUS_HOST, host);
+			conf.setDebug(true);
+			Map<String, Object> storm_conf = Utils.readStormConfig();
+			storm_conf.put("nimbus.host", host);
+			Client client = NimbusClient.getConfiguredClient(storm_conf).getClient();
+			String inputJar = args[2];
+			NimbusClient nimbus = new NimbusClient(storm_conf, host, port);
+
+			// upload topology jar to Cluster using StormSubmitter
+
+			String uploadedJarLocation = StormSubmitter.submitJar(storm_conf, inputJar);
+			try {
+				String jsonConf = JSONValue.toJSONString(storm_conf);
+				nimbus.getClient().submitTopology(topologyName, uploadedJarLocation, jsonConf,
+						builder.createTopology());
+			} catch (AlreadyAliveException ae) {
+				ae.printStackTrace();
+			}
+			Thread.sleep(60000);
+
 		}
 
 	}
@@ -159,7 +198,5 @@ public class GraphTopology {
 
 		return conf;
 	}
-
-
 
 }
