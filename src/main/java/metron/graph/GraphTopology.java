@@ -143,6 +143,11 @@ public class GraphTopology {
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(topologyName, conf, builder.createTopology());
 		} 
+		else
+		{
+			System.out.println("[METRON]Submitting topology to remote cluster...");
+			StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
+		}
 
 	}
 
