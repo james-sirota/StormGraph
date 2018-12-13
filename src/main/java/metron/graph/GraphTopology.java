@@ -71,7 +71,7 @@ public class GraphTopology {
 			String topic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
 			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
 			Long offsetCommitPeriodMs = Long
-					.parseLong(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf));
+					.parseLong(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.offsetCommitPeriodMs", conf));
 			int initialDelay = Integer
 					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
 			int delayPeriod = Integer
