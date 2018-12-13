@@ -72,11 +72,57 @@ startGraphTopology_local.sh
 ```
 And change the pom dependency for Storm artifacts to compile
 
+# Graph Topology
+
+The topology has 2 spouts, but only one can be specified as active.  First, there is a generatorSpout, which is used for load testing.  Second, there is a kafkaSpout which is an unmodified Storm kafka spout.  A message emmitted from a spout is assumed to be a JSON.  Then there is a mapper bolt that will map the JSON fields to an ontology with a relation.  Last, there is a JanusBolt that will write the ontologies into Janus 
+
+
+# Important Settings
+
+Topology settings are in graphtopology_config.conf
+
+If deploying into a dev cluster make sure the following settings are set
+
+```
+top.localDeploy=false
+```
+if this is set to true the topology will be deployed locally, which is used for testing and debugging
+
+Also if you want it to pull from kafka set:
+
+```
+top.generatorSpoutEnabled=false
+```
+otherwise it will generate synthetic data with the generatorSpout and put a load on your system
+
+If you are connecting to kafka, make sure you give the kafkaSpout a list of valid brokers:
+
+```
+top.spout.kafka.bootStrapServers=[hostname]:6667
+```
+
+The most important part is mapping messages to ontologies.  Lets say we have this example
+
+```
+{"ip_src":"9.71.7.24","ip_dst":"108.54.40.12","username":"user_53"}
+```
+
+and we want to define 2 ontologies from this: ip_src connectsTo ip_dst and username uses ip_src
+
+
+```
+top.mapperbolt.allowedEdges=connectsTo,uses
+top.mapperbolt.mappings=ip_src,ip_dst,connectsTo,host,host;username,ip_src,uses,user,host
+```
+
+Lastly you need to configure the indexer and the graph store.  Janus ships with a variety of configs.  For example, to use Casandra with ES you would:
+
+```
+top.graphbolt.backEndConfigLocation=src/test/resources/janusgraph-cassandra-es.properties
+```
+You can also use Hbase and Solr with appropriate configs.  This is a Janus config item and all the bolt is doing is propagating it to the writer.  There is no custom code here to connect. 
+
 
 # DISCLAMER
 
 This is a POC-grade proof of capability.  At this point it is not meant to run in production nor be included with the Metron project.  Absolutely no support is provided. USE AT YOUR OWN RISK
-
-#Graph Topology
-
-The topology has 2 spouts, but only one can be specified as active.  First, there is a generatorSpout, which is used for load testing.  Second, there is a kafkaSpout which is an unmodified Storm kafka spout.  A message emmitted from a spout is assumed to be a JSON.  Then there is a mapper bolt that will map the JSON fields to an ontology with a relation.  Last, there is a JanusBolt that will write the ontologies into Janus 
