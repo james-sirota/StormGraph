@@ -76,3 +76,7 @@ And change the pom dependency for Storm artifacts to compile
 # DISCLAMER
 
 This is a POC-grade proof of capability.  At this point it is not meant to run in production nor be included with the Metron project.  Absolutely no support is provided. USE AT YOUR OWN RISK
+
+#Graph Topology
+
+The topology has 2 spouts, but only one can be specified as active.  First, there is a generatorSpout, which is used for load testing.  Second, there is a kafkaSpout which is an unmodified Storm kafka spout.  A message emmitted from a spout is assumed to be a JSON.  Then there is a mapper bolt that will map the JSON fields to an ontology with a relation.  Last, there is a JanusBolt that will write the ontologies into Janus 
