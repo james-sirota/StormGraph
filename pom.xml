@@ -38,48 +38,48 @@
 			<artifactId>storm-core</artifactId>
 			<version>1.1.0</version>
 			<scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>servlet-api</artifactId>
-                    <groupId>javax.servlet</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                    <groupId>org.apache.logging.log4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-            </exclusions>
+			<exclusions>
+				<exclusion>
+					<artifactId>servlet-api</artifactId>
+					<groupId>javax.servlet</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>log4j-over-slf4j</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>log4j-slf4j-impl</artifactId>
+					<groupId>org.apache.logging.log4j</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.storm</groupId>
 			<artifactId>storm-kafka-client</artifactId>
 			<version>1.1.0</version>
 			<scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>servlet-api</artifactId>
-                    <groupId>javax.servlet</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                    <groupId>org.apache.logging.log4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-            </exclusions>
+			<exclusions>
+				<exclusion>
+					<artifactId>servlet-api</artifactId>
+					<groupId>javax.servlet</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>log4j-over-slf4j</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>log4j-slf4j-impl</artifactId>
+					<groupId>org.apache.logging.log4j</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
@@ -94,8 +94,8 @@
 
 
 	</dependencies>
-	
-	
+
+
 	<build>
 		<resources>
 			<resource>
@@ -103,30 +103,68 @@
 			</resource>
 		</resources>
 		<plugins>
+
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>metron.graph.GraphTopology</mainClass>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<createDependencyReducedPom>true</createDependencyReducedPom>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.sf</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.dsa</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+								<exclude>META-INF/*.rsa</exclude>
+								<exclude>META-INF/*.EC</exclude>
+								<exclude>META-INF/*.ec</exclude>
+								<exclude>META-INF/MSFTSIG.SF</exclude>
+								<exclude>META-INF/MSFTSIG.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
+				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<archive>
-								<manifest>
-									<mainClass>
-										metron.graph.GraphTopology
-									</mainClass>
-								</manifest>
-							</archive>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+								</transformer>
+							</transformers>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
+
+
+
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -139,7 +177,7 @@
 			</plugin>
 
 		</plugins>
-		
+
 	</build>
 
 
