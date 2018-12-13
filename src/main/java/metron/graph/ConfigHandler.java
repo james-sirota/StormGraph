@@ -19,11 +19,12 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.apache.storm.Config;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigHandler {
 
-	private static final Logger logger = Logger.getLogger(ConfigHandler.class);
+	private static final Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
 
 	public static String checkForNullConfigAndLoad(String configName, Config conf) throws IllegalArgumentException {
 		if (!conf.containsKey(configName))

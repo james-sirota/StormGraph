@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -36,7 +37,7 @@ import org.apache.storm.tuple.Values;
 
 public class GraphTopology {
 
-	private static final Logger logger = Logger.getLogger(GraphTopology.class);
+	private static final Logger logger = LoggerFactory.getLogger(GraphTopology.class);
 
 	public static void main(String[] args) throws Exception {
 

@@ -19,13 +19,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hadoop.hbase.shaded.org.junit.Before;
+
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 import org.janusgraph.diskstorage.BackendException;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;

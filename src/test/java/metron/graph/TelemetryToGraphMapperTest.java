@@ -17,8 +17,9 @@ package metron.graph;
 
 import java.util.ArrayList;
 
-import org.apache.hadoop.hbase.shaded.org.junit.Before;
+
 import org.json.simple.JSONObject;
+import org.junit.Before;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
