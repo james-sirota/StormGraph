@@ -27,8 +27,6 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
 public class JanusBolt extends BaseRichBolt {
 
 	/**
@@ -41,9 +39,11 @@ public class JanusBolt extends BaseRichBolt {
 	private Logger logger;
 	private JanusDAO jd;
 	private String FIELD_TO_LOOK_FOR = "ont";
+	private OutputCollector collector;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+		this.collector = collector;
 		logger = LoggerFactory.getLogger(JanusBolt.class);
 
 		logger.trace("Initializing janus bolt...");
@@ -52,15 +52,14 @@ public class JanusBolt extends BaseRichBolt {
 		TTL_VALUE = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.ttlDays", conf));
 
 		logger.trace("Initializing Janus DAO...");
-		
+
 		File file = new File(JANUS_CONFIG);
-	    
-		if(!file.exists())
-		{
+
+		if (!file.exists()) {
 			logger.error("File not found: " + JANUS_CONFIG);
 			System.exit(0);
 		}
-	    
+
 		try {
 			jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
 		} catch (ConfigurationException | InterruptedException e) {
@@ -68,27 +67,36 @@ public class JanusBolt extends BaseRichBolt {
 			e.printStackTrace();
 		}
 		// jd.createConnectsRelationshipSchema();
-		
+
 		logger.debug("Janus bolt initialized...");
 	}
 
 	public void execute(Tuple tuple) {
-		
 
-		if (!tuple.contains(FIELD_TO_LOOK_FOR))
-			throw new IllegalArgumentException("Ontology is not present, invalid input in field: " + FIELD_TO_LOOK_FOR);
+		try {
 
-		Ontology ont = (Ontology) tuple.getValueByField(FIELD_TO_LOOK_FOR);
+			if (!tuple.contains(FIELD_TO_LOOK_FOR))
+				throw new IllegalArgumentException(
+						"Ontology is not present, invalid input in field: " + FIELD_TO_LOOK_FOR);
 
-		logger.debug("Graphing ontology: " + ont.printElement());
-		
-		jd.linkNodes(ont.getVertex1type(), ont.getVertex2type(), "valueKey", ont.getVertex1(), "valueKey", ont.getVertex2(), ont.getVerb());
+			Ontology ont = (Ontology) tuple.getValueByField(FIELD_TO_LOOK_FOR);
+
+			logger.debug("Graphing ontology: " + ont.printElement());
+
+			jd.linkNodes(ont.getVertex1type(), ont.getVertex2type(), "valueKey", ont.getVertex1(), "valueKey",
+					ont.getVertex2(), ont.getVerb());
+
+			collector.ack(tuple);
+		} catch (Exception e) {
+			collector.fail(tuple);
+			e.printStackTrace();
+		}
+
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer arg0) {
 		// TODO Auto-generated method stub
 
 	}
-
 
 }

@@ -66,8 +66,7 @@ public class MapperBolt extends BaseRichBolt {
 
 	}
 
-	public void execute(Tuple tuple) 
-	{
+	public void execute(Tuple tuple) {
 
 		try {
 
@@ -80,30 +79,31 @@ public class MapperBolt extends BaseRichBolt {
 
 			if (jsonObject.keySet().size() == 0)
 				throw new IllegalArgumentException(jsonObject + " is not a valid message");
-			
+
 			ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
 
-			if(ontologyList.isEmpty())
+			if (ontologyList.isEmpty())
 				logger.debug("No ontologies found for object: " + jsonObject);
-			
-			for(int i = 0; i < ontologyList.size(); i++)
-			{
+
+			for (int i = 0; i < ontologyList.size(); i++) {
 				Ontology ont = ontologyList.get(i);
-				
+
 				logger.debug("Emmiting ontology: " + ont.printElement());
-				
+
 				collector.emit(new Values(ont));
 			}
-			
 
-		}catch(
+			collector.ack(tuple);
+		}
 
-	ParseException e)
-	{
-		logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
-		e.printStackTrace();
+		catch (
+				
+		ParseException e) {
+			collector.fail(tuple);
+			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
+			e.printStackTrace();
+		}
+
 	}
-
-}
 
 }

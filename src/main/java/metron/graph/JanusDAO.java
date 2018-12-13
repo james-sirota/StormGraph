@@ -34,12 +34,11 @@ public class JanusDAO {
 
 	private int DEFAULT_TTL_DAYS;
 
-	protected String CONFIG_FILE;
-	protected String KEY_ID = "nodeName";
-	protected String GLOBAL_VERTEX_INDEX_NAME = "MetronGraphVertex";
-	protected String GLOBAL_EDGE_INDEX_NAME = "MetronGraphEdge";
-
-	Logger logger = LoggerFactory.getLogger(ConfigHandler.class);;
+	private String CONFIG_FILE;
+	private String KEY_ID = "nodeName";
+	private String GLOBAL_VERTEX_INDEX_NAME = "MetronGraphVertex";
+	private String GLOBAL_EDGE_INDEX_NAME = "MetronGraphEdge";
+	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);;
 
 	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
 		CONFIG_FILE = configFIle;
