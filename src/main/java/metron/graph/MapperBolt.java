@@ -77,18 +77,21 @@ public class MapperBolt extends BaseRichBolt {
 			logger.debug("Parsing tuple: " + tuple + " with message id: " + globalMessageID + 
 					" and message fields: "	+ tuple.getFields() + " and stream id: " + tuple.getSourceStreamId());
 			
+			if (!tuple.contains(tupleToLookFor))
+				throw new IllegalArgumentException(tupleToLookFor + " tuple: " + tuple + " for message: " + globalMessageID);
 			
-			JSONObject tupleList = (JSONObject) parser.parse(tuple.getString(0));
 			
-			logger.debug("Reconstructed the following JSON object: " + tupleList + " for message " + globalMessageID);
+			JSONArray tupleList = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
 			
-			if(!(tupleList instanceof JSONObject))
+			logger.debug("Reconstructed the following JSON array object: " + tupleList + " for message " + globalMessageID);
+			
+			if(!(tupleList instanceof JSONArray))
 				throw new IllegalArgumentException("Data quality issue, the following item is not a JSON list: " + tupleList + " for message: " + globalMessageID);
 			
 			int messageCount = 0;
-			int totalMessages = tupleList.values().size();
+			int totalMessages = tupleList.size();
 			
-			for (Object jsonObject : tupleList.values()) 
+			for (Object jsonObject : tupleList) 
 			{
 				logger.debug("Iterating through message: " + messageCount + " of " + totalMessages + " for message: " + globalMessageID);
 				
@@ -98,23 +101,19 @@ public class MapperBolt extends BaseRichBolt {
 	            	
 	            	logger.debug("Looking for identifying tuple: " + tupleToLookFor + " for message: " + globalMessageID);
 	            	
-	            	if (!tuple.contains(tupleToLookFor))
-	    				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present for inner message" + jsonObject + " for message: " + globalMessageID);
-	            	
-	            	JSONObject innerObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
 
 	    			logger.debug("Parsed inner json ojbect: " + jsonObject + " for message: " + globalMessageID);
 	    			
-	    			if (innerObject.keySet().size() == 0)
+	    			if (((JSONObject)jsonObject).keySet().size() == 0)
 	    				throw new IllegalArgumentException(jsonObject + " is not a valid message or is empty for inner message: " + jsonObject + " for message: " + globalMessageID);
 	    			
 	    			
 	    			logger.debug("Examining a set of the following mapper strings: " + mappingString + " for message: " + globalMessageID);
 	    			
-	    			ArrayList<Ontology> ontologyList = mapper.getOntologies(innerObject);
+	    			ArrayList<Ontology> ontologyList = mapper.getOntologies((JSONObject) jsonObject);
 	    			
 	    			if (ontologyList.isEmpty())
-	    				logger.debug("No ontologies found for object: " + innerObject + " for inner message" + jsonObject + " for message: " + globalMessageID);
+	    				logger.debug("No ontologies found for object: " + jsonObject + " for inner message" + jsonObject + " for message: " + globalMessageID);
 	    			
 
 	    			for (int i = 0; i < ontologyList.size(); i++) {
