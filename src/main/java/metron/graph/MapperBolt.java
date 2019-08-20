@@ -86,7 +86,7 @@ public class MapperBolt extends BaseRichBolt {
 					" and message fields: "	+ tuple.getFields() + " and stream id: " + tuple.getSourceStreamId());
 			
 			
-			JSONArray tupleList = (JSONArray) parser.parse();
+			JSONArray tupleList = (JSONArray) parser.parse(rawInput);
 			
 			logger.debug("Reconstructed the following JSON array object: " + tupleList + " for message " + globalMessageID);
 			
