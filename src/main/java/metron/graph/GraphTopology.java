@@ -28,6 +28,8 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig.Builder;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.topology.TopologyBuilder;
@@ -97,17 +99,28 @@ public class GraphTopology {
 			String tupleFieldOffset = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
 			String tupleFieldKey = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
 			String tupleFieldValue = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
+			boolean forceFromStart =  Boolean
+					.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.forceFromStart", conf));
+			
+		
 
 			logger.trace("Started initializing spoutConf");
-			KafkaSpoutConfig<String, String> spoutConf = KafkaSpoutConfig.builder(bootStrapServers, topic)
+			Builder<String, String> spoutConfBuilder = KafkaSpoutConfig.builder(bootStrapServers, topic)
 					.setProp(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId)
 					.setOffsetCommitPeriodMs(offsetCommitPeriodMs)
-					.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST)
+					//.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST)
 					.setMaxUncommittedOffsets(maxUncommittedOffsets).setRetry(kafkaSpoutRetryService)
 					.setRecordTranslator((r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
 							new Fields(tupleFieldTopic, tupleFieldPartition, tupleFieldOffset, tupleFieldKey,
-									tupleFieldValue))
-					.build();
+									tupleFieldValue));
+			
+			if(forceFromStart)
+				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
+			else
+				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
+			
+			KafkaSpoutConfig<String, String> spoutConf = spoutConfBuilder.build();
+			
 			logger.trace("Finished initializing spoutConf");
 
 			builder.setSpout(spoutName, new KafkaSpout<String, String>(spoutConf), spoutParallelism);
