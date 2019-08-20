@@ -152,7 +152,7 @@ public class GraphTopology {
 			
 			System.out.println("[KAFKA_SPOUT] " + forceFromStartParam + " is: " + forceFromStart);
 
-			System.out.println("Started initializing spoutConf");
+			System.out.println("[KAFKA_SPOUT] " + "Started initializing spoutConf");
 			Builder<String, String> spoutConfBuilder = KafkaSpoutConfig.builder(bootStrapServers, topic)
 					.setProp(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId)
 					.setOffsetCommitPeriodMs(offsetCommitPeriodMs)
@@ -209,12 +209,13 @@ public class GraphTopology {
 		String topologyName = ConfigHandler.checkForNullConfigAndLoad("top.name", conf);
 
 		if (localDeploy) {
+			System.out.println("[DEPLOYER] " + " Submitting topology to local cluster...");
 			LocalCluster cluster = new LocalCluster();
 			cluster.submitTopology(topologyName, conf, builder.createTopology());
 		} 
 		else
 		{
-			System.out.println("[METRON]Submitting topology to remote cluster...");
+			System.out.println("[DEPLOYER] " + " Submitting topology to remote cluster...");
 			StormSubmitter.submitTopology(topologyName, conf, builder.createTopology());
 		}
 
