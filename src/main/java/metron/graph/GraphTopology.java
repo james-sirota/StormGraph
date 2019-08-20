@@ -58,32 +58,70 @@ public class GraphTopology {
 
 		if (generateData) {
 
-			logger.trace("Started initializing generator spout");
-			logger.debug(
+			System.out.println("Started initializing generator spout");
+			System.out.println(
 					"Setting up generator spout with name " + spoutName + " and parallelism of " + spoutParallelism);
 			builder.setSpout(spoutName, new TelemetryLoaderSpout(), spoutParallelism);
-			logger.trace("Finished initializing the generator spout");
+			System.out.println("Finished initializing the generator spout");
 
-		} else {
-
-			logger.info("Setting kafka spout...");
+		} 
+		
+		else {
 			
-			String bootStrapServers = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.bootStrapServers", conf);
-			String topic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.topic", conf);
-			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.consumerGroupId", conf);
-			Long offsetCommitPeriodMs = Long
-					.parseLong(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.offsetCommitPeriodMs", conf));
-			int initialDelay = Integer
-					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.initialDelay", conf));
-			int delayPeriod = Integer
-					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.delayPeriod", conf));
-			int maxDelay = Integer
-					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.retry.maxDelay", conf));
-			int maxUncommittedOffsets = Integer
-					.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.maxUncommittedOffsets", conf));
+			String bootstrapServersParam = "top.spout.kafka.bootStrapServers";
+			String topicParam = "top.spout.kafka.topic";
+			String consumerGroupParam = "top.spout.kafka.consumerGroupId";
+			String offsetCommitPeriodMsParam = "top.spout.kafka.offsetCommitPeriodMs";
+			String initialDelayParam = "top.spout.kafka.retry.initialDelay";
+			String delayPeriodParam = "top.spout.kafka.retry.delayPeriod";
+			String maxDelayParam = "top.spout.kafka.retry.maxDelay";
+			String uncommittedOffsetsParam = "top.spout.kafka.maxUncommittedOffsets";
+			String tupleFieldTopicParam = "top.spout.kafka.tupleFieldTopic";
+			String tupleFieldPartitionParam = "top.spout.kafka.tupleFieldPartition";
+			String tupleFieldOffsetParam = "top.spout.kafka.tupleFieldOffset";
+			String tupleFieldKeyParam = "top.spout.kafka.tupleFieldKey";
+			String tupleFieldValueParam = "top.spout.kafka.tupleFieldValue";
+			String forceFromStartParam = "top.spout.kafka.forceFromStart";
 
-			logger.trace("Started initializing kafkaSpoutRetryService");
-			logger.debug("Initializing kafkaSpoutRetryService " + " with initial delay " + initialDelay
+			System.out.println("[KAFKA_SPOUT] " + "Setting up kafka spout with the following arguments...");
+			
+			String bootStrapServers = ConfigHandler.checkForNullConfigAndLoad(bootstrapServersParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + bootstrapServersParam + " is: " + bootStrapServers);
+			
+			String topic = ConfigHandler.checkForNullConfigAndLoad(topicParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + topicParam + " is: " + topic);
+			
+			String consumerGroupId = ConfigHandler.checkForNullConfigAndLoad(consumerGroupParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + consumerGroupParam + " is: " + consumerGroupId);
+			
+			Long offsetCommitPeriodMs = Long
+					.parseLong(ConfigHandler.checkForNullConfigAndLoad(offsetCommitPeriodMsParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + offsetCommitPeriodMsParam + " is: " + offsetCommitPeriodMs);
+			
+			int initialDelay = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad(initialDelayParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + initialDelayParam + " is: " + initialDelay);
+			
+			int delayPeriod = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad(delayPeriodParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + delayPeriodParam + " is: " + delayPeriod);
+			
+			
+			int maxDelay = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad(maxDelayParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + maxDelayParam + " is: " + maxDelay);
+			
+			int maxUncommittedOffsets = Integer
+					.parseInt(ConfigHandler.checkForNullConfigAndLoad(uncommittedOffsetsParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + uncommittedOffsetsParam + " is: " + maxUncommittedOffsets);
+
+			System.out.println("[KAFKA_SPOUT] " + "Started initializing kafkaSpoutRetryService...");
+			System.out.println("[KAFKA_SPOUT] " + "Initializing kafkaSpoutRetryService " + " with initial delay " + initialDelay
 					+ " delay period " + delayPeriod + " max delay " + maxDelay);
 
 			KafkaSpoutRetryService kafkaSpoutRetryService = new KafkaSpoutRetryExponentialBackoff(
@@ -91,20 +129,30 @@ public class GraphTopology {
 					KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(delayPeriod), Integer.MAX_VALUE,
 					KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(maxDelay));
 
-			logger.trace("Finished initializing kafkaSpoutRetryService");
+			System.out.println("[KAFKA_SPOUT] " + "Finished initializing kafkaSpoutRetryService");
 
-			String tupleFieldTopic = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldTopic", conf);
-			String tupleFieldPartition = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldPartition",
-					conf);
-			String tupleFieldOffset = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldOffset", conf);
-			String tupleFieldKey = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldKey", conf);
-			String tupleFieldValue = ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.tupleFieldValue", conf);
-			boolean forceFromStart =  Boolean
-					.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.spout.kafka.forceFromStart", conf));
+			String tupleFieldTopic = ConfigHandler.checkForNullConfigAndLoad(tupleFieldTopicParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + tupleFieldTopicParam + " is: " + tupleFieldTopic);
 			
-		
+			String tupleFieldPartition = ConfigHandler.checkForNullConfigAndLoad(tupleFieldPartitionParam,conf);
+			System.out.println("[KAFKA_SPOUT] " + tupleFieldPartitionParam + " is: " + tupleFieldPartition);
+			
+			String tupleFieldOffset = ConfigHandler.checkForNullConfigAndLoad(tupleFieldOffsetParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + tupleFieldOffsetParam + " is: " + tupleFieldOffset);
+			
+			
+			String tupleFieldKey = ConfigHandler.checkForNullConfigAndLoad(tupleFieldKeyParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + tupleFieldKeyParam + " is: " + tupleFieldKey);
+			
+			String tupleFieldValue = ConfigHandler.checkForNullConfigAndLoad(tupleFieldValueParam, conf);
+			System.out.println("[KAFKA_SPOUT] " + tupleFieldValueParam + " is: " + tupleFieldValue);
+			
+			boolean forceFromStart =  Boolean
+					.parseBoolean(ConfigHandler.checkForNullConfigAndLoad(forceFromStartParam, conf));
+			
+			System.out.println("[KAFKA_SPOUT] " + forceFromStartParam + " is: " + forceFromStart);
 
-			logger.trace("Started initializing spoutConf");
+			System.out.println("Started initializing spoutConf");
 			Builder<String, String> spoutConfBuilder = KafkaSpoutConfig.builder(bootStrapServers, topic)
 					.setProp(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId)
 					.setOffsetCommitPeriodMs(offsetCommitPeriodMs)
@@ -115,17 +163,24 @@ public class GraphTopology {
 									tupleFieldValue));
 			
 			if(forceFromStart)
+			{
+				System.out.println("[KAFKA_SPOUT] " + "Forcing from start...");
 				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
+	
+			}
 			else
+			{
+				System.out.println("[KAFKA_SPOUT] " + "Forcing from lateset uncomitted offset...");
 				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
+			}
 			
 			KafkaSpoutConfig<String, String> spoutConf = spoutConfBuilder.build();
 			
-			logger.trace("Finished initializing spoutConf");
+			System.out.println("[KAFKA_SPOUT] " + "Finished initializing spoutConf");
 
 			builder.setSpout(spoutName, new KafkaSpout<String, String>(spoutConf), spoutParallelism);
 			
-			logger.info("Finished setting kafka spout...");
+			System.out.println("[KAFKA_SPOUT] " + "Finished setting kafka spout...");
 
 		}
 
@@ -133,14 +188,14 @@ public class GraphTopology {
 		int mapperboltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
-		logger.debug("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
+		System.out.println("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
 		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
 
 		String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
 		int graphBoltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
 
-		logger.debug("Initializing " + graphBoltName + " with parallelism " + graphBoltParallelism);
+		System.out.println("Initializing " + graphBoltName + " with parallelism " + graphBoltParallelism);
 		builder.setBolt(graphBoltName, new JanusBolt(), graphBoltParallelism).shuffleGrouping(mapperBoltName);
 
 		boolean debugMode = Boolean.getBoolean(ConfigHandler.checkForNullConfigAndLoad("top.debug", conf));
