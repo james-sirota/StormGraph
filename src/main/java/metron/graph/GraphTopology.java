@@ -184,7 +184,7 @@ public class GraphTopology {
 
 		}
 
-		String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
+		/*String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
 		int mapperboltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
@@ -202,7 +202,7 @@ public class GraphTopology {
 		conf.setDebug(debugMode);
 
 		int numWorkers = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.numWorkers", conf));
-		conf.setNumWorkers(numWorkers);
+		conf.setNumWorkers(numWorkers);*/
 
 		boolean localDeploy = Boolean.parseBoolean(ConfigHandler.checkForNullConfigAndLoad("top.localDeploy", conf));
 
