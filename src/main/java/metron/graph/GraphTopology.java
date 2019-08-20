@@ -165,16 +165,18 @@ public class GraphTopology {
 			if(forceFromStart)
 			{
 				System.out.println("[KAFKA_SPOUT] " + "Forcing from start...");
-				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
+				spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
 	
 			}
 			else
 			{
 				System.out.println("[KAFKA_SPOUT] " + "Forcing from lateset uncomitted offset...");
-				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
+				spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
 			}
 			
 			KafkaSpoutConfig<String, String> spoutConf = spoutConfBuilder.build();
+			
+		
 			
 			System.out.println("[KAFKA_SPOUT] " + "Finished initializing spoutConf");
 
