@@ -25,6 +25,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -43,6 +44,8 @@ public class MapperBolt extends BaseRichBolt {
 	private String tupleToLookFor;
 	private Logger logger;
 	private TelemetryToGraphMapper mapper;
+	
+	private String mappingString = null;
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
@@ -53,7 +56,7 @@ public class MapperBolt extends BaseRichBolt {
 		parser = new JSONParser();
 
 		logger.trace("Initializing mapping config...");
-		String mappingString = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.mappings", conf);
+		mappingString = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.mappings", conf);
 		// mapperConfig = ConfigHandler.getAndValidateMappings(mappingString);
 		mapper = new TelemetryToGraphMapper(ConfigHandler.getAndValidateMappings(mappingString));
 
@@ -69,36 +72,75 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
+			int globalMessageID = tuple.getMessageId().hashCode();
+			
+			logger.debug("Parsing tuple: " + tuple + " with message id: " + globalMessageID + 
+					" and message fields: "	+ tuple.getFields() + " and stream id: " + tuple.getSourceStreamId());
+			
+			
+			JSONObject tupleList = (JSONObject) parser.parse(tuple.getString(0));
+			
+			logger.debug("Reconstructed the following JSON object: " + tupleList + " for message " + globalMessageID);
+			
+			if(!(tupleList instanceof JSONObject))
+				throw new IllegalArgumentException("Data quality issue, the following item is not a JSON list: " + tupleList + " for message: " + globalMessageID);
+			
+			int messageCount = 0;
+			int totalMessages = tupleList.values().size();
+			
+			for (Object jsonObject : tupleList.values()) 
+			{
+				logger.debug("Iterating through message: " + messageCount + " of " + totalMessages + " for message: " + globalMessageID);
+				
+	            if(jsonObject instanceof JSONObject)
+	            {
+	            	logger.debug("Extracted inner JSON: " + jsonObject + " as inner message number: " + totalMessages + " for message: " + globalMessageID);
+	            	
+	            	logger.debug("Looking for identifying tuple: " + tupleToLookFor + " for message: " + globalMessageID);
+	            	
+	            	if (!tuple.contains(tupleToLookFor))
+	    				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present for inner message" + jsonObject + " for message: " + globalMessageID);
+	            	
+	            	JSONObject innerObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
 
-			if (!tuple.contains(tupleToLookFor))
-				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
+	    			logger.debug("Parsed inner json ojbect: " + jsonObject + " for message: " + globalMessageID);
+	    			
+	    			if (innerObject.keySet().size() == 0)
+	    				throw new IllegalArgumentException(jsonObject + " is not a valid message or is empty for inner message: " + jsonObject + " for message: " + globalMessageID);
+	    			
+	    			
+	    			logger.debug("Examining a set of the following mapper strings: " + mappingString + " for message: " + globalMessageID);
+	    			
+	    			ArrayList<Ontology> ontologyList = mapper.getOntologies(innerObject);
+	    			
+	    			if (ontologyList.isEmpty())
+	    				logger.debug("No ontologies found for object: " + innerObject + " for inner message" + jsonObject + " for message: " + globalMessageID);
+	    			
 
-			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
+	    			for (int i = 0; i < ontologyList.size(); i++) {
+	    				Ontology ont = ontologyList.get(i);
 
-			logger.debug("Parsed json ojbect: " + jsonObject);
+	    				logger.debug("Emmiting ontology: " + ont.printElement() +  " for message: " + globalMessageID);
 
-			if (jsonObject.keySet().size() == 0)
-				throw new IllegalArgumentException(jsonObject + " is not a valid message");
+	    				collector.emit(new Values(ont));
+	    			}
 
-			ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
+	    			collector.ack(tuple);
+	            }
+	            else
+	            	throw new IllegalArgumentException("Data quality issue, the following inner json is invalid: " + jsonObject + 
+	            			" this is item " + messageCount + " for message: " + globalMessageID);
+	            
+	            messageCount = messageCount + 1;
+	        }
+				
 
-			if (ontologyList.isEmpty())
-				logger.debug("No ontologies found for object: " + jsonObject);
-
-			for (int i = 0; i < ontologyList.size(); i++) {
-				Ontology ont = ontologyList.get(i);
-
-				logger.debug("Emmiting ontology: " + ont.printElement());
-
-				collector.emit(new Values(ont));
-			}
-
-			collector.ack(tuple);
 		}
 
 		catch (
 				
-		ParseException e) {
+		ParseException e) 
+		{
 			collector.fail(tuple);
 			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
 			e.printStackTrace();
