@@ -165,18 +165,23 @@ public class GraphTopology {
 			if(forceFromStart)
 			{
 				System.out.println("[KAFKA_SPOUT] " + "Forcing from start...");
-				spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
+				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
 	
 			}
 			else
 			{
 				System.out.println("[KAFKA_SPOUT] " + "Forcing from lateset uncomitted offset...");
-				spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
+				spoutConfBuilder = spoutConfBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST);
 			}
 			
 			KafkaSpoutConfig<String, String> spoutConf = spoutConfBuilder.build();
 			
-		
+			System.out.println("Built kafka spout with the following attributes");
+			System.out.println("[KAFKA_SPOUT] " + "Consumer group" + spoutConf.getConsumerGroupId());
+			System.out.println("[KAFKA_SPOUT] " + "Max uncommitted offsets" + spoutConf.getMaxUncommittedOffsets());
+			System.out.println("[KAFKA_SPOUT] " + "Offset commit periods" + spoutConf.getOffsetsCommitPeriodMs());
+			System.out.println("[KAFKA_SPOUT] " + "Poll timeout ms" + spoutConf.getPollTimeoutMs());
+			System.out.println("[KAFKA_SPOUT] " + "Poll offset strategy" + spoutConf.getFirstPollOffsetStrategy());
 			
 			System.out.println("[KAFKA_SPOUT] " + "Finished initializing spoutConf");
 
@@ -186,14 +191,14 @@ public class GraphTopology {
 
 		}
 
-		String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
+		/*String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
 		int mapperboltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
 		System.out.println("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
 		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
 
-	/*	String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
+		String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
 		int graphBoltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
 
