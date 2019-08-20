@@ -184,14 +184,14 @@ public class GraphTopology {
 
 		}
 
-		/*String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
+		String mapperBoltName = ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.name", conf);
 		int mapperboltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.mapperbolt.parallelism", conf));
 
 		System.out.println("Initializing " + mapperBoltName + " with parallelism " + mapperboltParallelism);
 		builder.setBolt(mapperBoltName, new MapperBolt(), mapperboltParallelism).shuffleGrouping(spoutName);
 
-		String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
+	/*	String graphBoltName = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.name", conf);
 		int graphBoltParallelism = Integer
 				.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.parallelism", conf));
 
