@@ -75,6 +75,8 @@ public class MapperBolt extends BaseRichBolt {
 			
 			int globalMessageID = tuple.getMessageId().hashCode();
 			
+			logger.debug("looking for tuple: " + tupleToLookFor);
+			
 			if (!tuple.contains(tupleToLookFor))
 				throw new IllegalArgumentException(tupleToLookFor + " tuple: " + tuple + " for message: " + globalMessageID);
 			
