@@ -72,16 +72,21 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
-			int globalMessageID = tuple.getMessageId().hashCode();
 			
-			logger.debug("Parsing tuple: " + tuple + " with message id: " + globalMessageID + 
-					" and message fields: "	+ tuple.getFields() + " and stream id: " + tuple.getSourceStreamId());
+			int globalMessageID = tuple.getMessageId().hashCode();
 			
 			if (!tuple.contains(tupleToLookFor))
 				throw new IllegalArgumentException(tupleToLookFor + " tuple: " + tuple + " for message: " + globalMessageID);
 			
+			String rawInput = tuple.getStringByField(tupleToLookFor);
+			logger.debug("Raw input is: " + rawInput);
 			
-			JSONArray tupleList = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
+				
+			logger.debug("Parsing tuple: " + tuple + " with message id: " + globalMessageID + 
+					" and message fields: "	+ tuple.getFields() + " and stream id: " + tuple.getSourceStreamId());
+			
+			
+			JSONArray tupleList = (JSONArray) parser.parse();
 			
 			logger.debug("Reconstructed the following JSON array object: " + tupleList + " for message " + globalMessageID);
 			
