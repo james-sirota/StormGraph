@@ -80,10 +80,9 @@ public class MapperBolt extends BaseRichBolt {
 			if (!tuple.contains(tupleToLookFor))
 				throw new IllegalArgumentException(tupleToLookFor + " tuple: " + tuple + " for message: " + globalMessageID);
 			
-			for(Object v : tuple.getValues())
-				logger.debug("Value: "+ v + "--->" + tuple.getValueByField(v.toString())+ " for message: " + globalMessageID);
 			
-			String rawInput = tuple.getString(4);
+			
+			String rawInput = tuple.getStringByField("key");
 			logger.debug("Raw input is: " + rawInput);
 			
 				
