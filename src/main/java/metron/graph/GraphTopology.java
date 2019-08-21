@@ -162,6 +162,8 @@ public class GraphTopology {
 							new Fields(tupleFieldTopic, tupleFieldPartition, tupleFieldOffset, tupleFieldKey,
 									tupleFieldValue));
 			
+
+			
 			if(forceFromStart)
 			{
 				System.out.println("[KAFKA_SPOUT] " + "Forcing from start...");

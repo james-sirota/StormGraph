@@ -82,7 +82,7 @@ public class MapperBolt extends BaseRichBolt {
 			
 			
 			
-			String rawInput = tuple.getStringByField("key");
+			String rawInput = tuple.getString(4);
 			logger.debug("Raw input is: " + rawInput);
 			
 				
