@@ -32,6 +32,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class MapperBolt extends BaseRichBolt {
 
 	/**
@@ -73,6 +74,12 @@ public class MapperBolt extends BaseRichBolt {
 			
 			logger.info("Got tupple: " + tuple);
 			logger.info("Extracted tupple: " + tuple.getStringByField(tupleToLookFor));
+			
+			//Read JSON file
+            Object obj = parser.parse(tuple.getStringByField(tupleToLookFor));
+            JSONArray jList = (JSONArray) obj;
+            
+            logger.info("Parsed tupple: " + jList);
 
 			//if (!tuple.contains(tupleToLookFor))
 			//	throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
