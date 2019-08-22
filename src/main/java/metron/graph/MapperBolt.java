@@ -76,7 +76,7 @@ public class MapperBolt extends BaseRichBolt {
 			logger.info("Extracted tupple: " + tuple.getStringByField(tupleToLookFor));
 			
 			//Read JSON file
-            Object obj = parser.parse(tuple.getStringByField(tupleToLookFor));
+            Object obj = parser.parse(tuple.getStringByField(tupleToLookFor).trim());
             JSONArray jList = (JSONArray) obj;
             
             logger.info("Parsed tupple: " + jList);
