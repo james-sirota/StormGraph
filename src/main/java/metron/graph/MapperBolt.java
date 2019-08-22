@@ -25,6 +25,7 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -73,11 +74,11 @@ public class MapperBolt extends BaseRichBolt {
 			if (!tuple.contains(tupleToLookFor))
 				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
 
-			JSONObject jsonObject = (JSONObject) parser.parse(tuple.getStringByField(tupleToLookFor));
+			JSONArray jsonObject = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
 
-			logger.debug("Parsed json ojbect: " + jsonObject);
+			logger.info("Parsed json ojbect: " + jsonObject);
 
-			if (jsonObject.keySet().size() == 0)
+		/*	if (jsonObject.keySet().size() == 0)
 				throw new IllegalArgumentException(jsonObject + " is not a valid message");
 
 			ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
@@ -91,7 +92,7 @@ public class MapperBolt extends BaseRichBolt {
 				logger.debug("Emmiting ontology: " + ont.printElement());
 
 				collector.emit(new Values(ont));
-			}
+			}*/
 
 			collector.ack(tuple);
 		}
