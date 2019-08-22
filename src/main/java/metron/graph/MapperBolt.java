@@ -70,13 +70,15 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
+			
+			logger.info("Got tupple: " + tuple);
 
-			if (!tuple.contains(tupleToLookFor))
-				throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
+			//if (!tuple.contains(tupleToLookFor))
+			//	throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
 
-			JSONArray jsonObject = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
+			//JSONArray jsonObject = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
 
-			logger.info("Parsed json ojbect: " + jsonObject);
+			//logger.info("Parsed json ojbect: " + jsonObject);
 
 		/*	if (jsonObject.keySet().size() == 0)
 				throw new IllegalArgumentException(jsonObject + " is not a valid message");
@@ -97,9 +99,7 @@ public class MapperBolt extends BaseRichBolt {
 			collector.ack(tuple);
 		}
 
-		catch (
-				
-		ParseException e) {
+		catch (Exception e) {
 			collector.fail(tuple);
 			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
 			e.printStackTrace();
