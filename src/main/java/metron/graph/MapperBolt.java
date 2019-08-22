@@ -72,6 +72,7 @@ public class MapperBolt extends BaseRichBolt {
 		try {
 			
 			logger.info("Got tupple: " + tuple);
+			logger.info("Extracted tupple: " + tuple.getStringByField(tupleToLookFor));
 
 			//if (!tuple.contains(tupleToLookFor))
 			//	throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
