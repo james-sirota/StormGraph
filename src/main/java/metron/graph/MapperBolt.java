@@ -102,10 +102,10 @@ public class MapperBolt extends BaseRichBolt {
 					if (jo.keySet().size() == 0)
 						throw new IllegalArgumentException(jo + " is a zero-sized message");
 
-					ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
+					ArrayList<Ontology> ontologyList = mapper.getOntologies(jo);
 
 					if (ontologyList.isEmpty())
-						logger.info("No ontologies found for object: " + jsonObject);
+						logger.info("No ontologies found for object: " + jo);
 
 					for (int i = 0; i < ontologyList.size(); i++) {
 						Ontology ont = ontologyList.get(i);
