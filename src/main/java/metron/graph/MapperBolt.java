@@ -77,6 +77,9 @@ public class MapperBolt extends BaseRichBolt {
 			
 			//Read JSON file
             Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
+            
+            logger.info("Attempting to parse: " + obj);
+            
             JSONObject jsonObject = (JSONObject) obj;
            
             JSONArray jList = (JSONArray) jsonObject.get("array");
