@@ -33,7 +33,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class MapperBolt extends BaseRichBolt {
 
 	/**
@@ -72,68 +71,59 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
-			
+
 			logger.info("Got tupple: " + tuple);
-			
+
 			String extractedTuple = tuple.getStringByField(tupleToLookFor);
 			logger.info("Extracted tupple: " + extractedTuple);
-			
-			if(extractedTuple.length() == 0 || extractedTuple == null || extractedTuple == "")
-			{
+
+			if (extractedTuple.length() == 0 || extractedTuple == null || extractedTuple == "") {
 				logger.info("Received empty tuple with id, ignoring: " + tuple.getMessageId());
 				collector.ack(tuple);
-			}
-			else
-			{
-				//Read JSON file
-	            Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
-	            
-	            logger.info("Attempting to parse: " + obj);
-	            
-	            JSONObject jsonObject = (JSONObject) obj;
-	           
-	            JSONArray jList = (JSONArray) jsonObject.get("array");
-	            
-	            logger.info("Parsed tupple: " + jList);
-	            
-	            
-	            Iterator<?> iter = jList.iterator ();
+			} else {
+				// Read JSON file
+				Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
 
+				logger.info("Attempting to parse: " + obj);
 
-	            while (iter.hasNext()) 
-	            {
-	                    
-	            		JSONObject jo = (JSONObject) iter.next();
-	            		 logger.info("Inner object is: " + jo);
-	            	
-	            }
-	
+				JSONObject jsonObject = (JSONObject) obj;
 
+				JSONArray jList = (JSONArray) jsonObject.get("array");
 
-	
-			/*	if (jsonObject.keySet().size() == 0)
-					throw new IllegalArgumentException(jsonObject + " is not a valid message");
-	
-				ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
-	
-				if (ontologyList.isEmpty())
-					logger.debug("No ontologies found for object: " + jsonObject);
-	
-				for (int i = 0; i < ontologyList.size(); i++) {
-					Ontology ont = ontologyList.get(i);
-	
-					logger.debug("Emmiting ontology: " + ont.printElement());
-	
-					collector.emit(new Values(ont));
-				}*/
-	
+				logger.info("Parsed tupple: " + jList);
+
+				Iterator<?> iter = jList.iterator();
+
+				while (iter.hasNext()) {
+
+					JSONObject jo = (JSONObject) iter.next();
+					logger.info("Inner object is: " + jo);
+
+					if (jo.keySet().size() == 0)
+						throw new IllegalArgumentException(jo + " is a zero-sized message");
+
+					ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
+
+					if (ontologyList.isEmpty())
+						logger.info("No ontologies found for object: " + jsonObject);
+
+					for (int i = 0; i < ontologyList.size(); i++) {
+						Ontology ont = ontologyList.get(i);
+
+						logger.info("Emmiting ontology: " + ont.printElement());
+
+						collector.emit(new Values(ont));
+
+					}
+				}
+
 				collector.ack(tuple);
 			}
 		}
 
 		catch (Exception e) {
 			collector.fail(tuple);
-			logger.error("Failed to parse object" + tuple.getStringByField(tupleToLookFor));
+			logger.error("Failed to parse object tuple:" + tuple);
 			e.printStackTrace();
 		}
 
