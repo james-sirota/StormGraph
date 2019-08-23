@@ -16,6 +16,7 @@
 package metron.graph;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.storm.task.OutputCollector;
@@ -73,43 +74,61 @@ public class MapperBolt extends BaseRichBolt {
 		try {
 			
 			logger.info("Got tupple: " + tuple);
-			logger.info("Extracted tupple: " + tuple.getStringByField(tupleToLookFor));
 			
-			//Read JSON file
-            Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
-            
-            logger.info("Attempting to parse: " + obj);
-            
-            JSONObject jsonObject = (JSONObject) obj;
-           
-            JSONArray jList = (JSONArray) jsonObject.get("array");
-            
-            logger.info("Parsed tupple: " + jList);
+			String extractedTuple = tuple.getStringByField(tupleToLookFor);
+			logger.info("Extracted tupple: " + extractedTuple);
+			
+			if(extractedTuple.length() == 0 || extractedTuple == null || extractedTuple == "")
+			{
+				logger.info("Received empty tuple with id, ignoring: " + tuple.getMessageId());
+				collector.ack(tuple);
+			}
+			else
+			{
+				//Read JSON file
+	            Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
+	            
+	            logger.info("Attempting to parse: " + obj);
+	            
+	            JSONObject jsonObject = (JSONObject) obj;
+	           
+	            JSONArray jList = (JSONArray) jsonObject.get("array");
+	            
+	            logger.info("Parsed tupple: " + jList);
+	            
+	            
+	            Iterator<?> iter = jList.iterator ();
 
-			//if (!tuple.contains(tupleToLookFor))
-			//	throw new IllegalArgumentException(tupleToLookFor + " tuple is not present");
 
-			//JSONArray jsonObject = (JSONArray) parser.parse(tuple.getStringByField(tupleToLookFor));
+	            while (iter.hasNext()) 
+	            {
+	                    
+	            		JSONObject jo = (JSONObject) iter.next();
+	            		 logger.info("Inner object is: " + jo);
+	            	
+	            }
+	
 
-			//logger.info("Parsed json ojbect: " + jsonObject);
 
-		/*	if (jsonObject.keySet().size() == 0)
-				throw new IllegalArgumentException(jsonObject + " is not a valid message");
-
-			ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
-
-			if (ontologyList.isEmpty())
-				logger.debug("No ontologies found for object: " + jsonObject);
-
-			for (int i = 0; i < ontologyList.size(); i++) {
-				Ontology ont = ontologyList.get(i);
-
-				logger.debug("Emmiting ontology: " + ont.printElement());
-
-				collector.emit(new Values(ont));
-			}*/
-
-			collector.ack(tuple);
+	
+			/*	if (jsonObject.keySet().size() == 0)
+					throw new IllegalArgumentException(jsonObject + " is not a valid message");
+	
+				ArrayList<Ontology> ontologyList = mapper.getOntologies(jsonObject);
+	
+				if (ontologyList.isEmpty())
+					logger.debug("No ontologies found for object: " + jsonObject);
+	
+				for (int i = 0; i < ontologyList.size(); i++) {
+					Ontology ont = ontologyList.get(i);
+	
+					logger.debug("Emmiting ontology: " + ont.printElement());
+	
+					collector.emit(new Values(ont));
+				}*/
+	
+				collector.ack(tuple);
+			}
 		}
 
 		catch (Exception e) {
