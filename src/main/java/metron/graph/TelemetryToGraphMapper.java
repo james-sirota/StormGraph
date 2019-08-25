@@ -32,17 +32,63 @@ public class TelemetryToGraphMapper implements Serializable{
 
 	public TelemetryToGraphMapper(ArrayList<TrippleStoreConf> mapconfig) {
 		mapperConfig = mapconfig;
+		
+		logger.info("Mapper config initialized with the following properties");
+		
+		mapperConfig.forEach((k)->
+		{
+			logger.info("MapperConfigItem : " + k.toString());
+			validateRelation(k);
+			
+		});
+
+		
 	}
 
 	public ArrayList<Ontology> getOntologies(JSONObject jsonObject) {
 		ArrayList<Ontology> ontologies = new ArrayList<Ontology>();
+		
+		mapperConfig.forEach((k)->
+		{
+			logger.info("Looking at config item : " + k.toString() + " for json: " + jsonObject);
+			validateRelation(k);
+			validateMessage(jsonObject);
+			
+			if (jsonObject.containsKey(k.getNode1name()) && jsonObject.containsKey(k.getNode2name()))
+			{
+				logger.info("Matched rule : " + k.toString() + " for json: " + jsonObject);
+			
+				String node1 = jsonObject.get(k.getNode1name()).toString();
+				String node2 = jsonObject.get(k.getNode2name()).toString();
+				String node1type = k.getNode1type();
+				String node2type = k.getNode2type();
+				String verb = k.getVerbname();
+	
+				logger.info("Extracted relation: " + node1 + " " + verb + " " + node2 + " " + node1type + " "
+						+ node2type + " from object: " + jsonObject + " via rule " + k.printElement() + " for item: " + jsonObject);
+	
+				Ontology ont = new Ontology(node1, verb, node2, node1type, node2type);
+				ontologies.add(ont);
+			}
+			
+			else 
+			{
+				if (!jsonObject.containsKey(k.getNode1name()))
+					logger.info("No source vertex " + k.getNode1name() + " in object " + jsonObject);
 
+				if (!jsonObject.containsKey(k.getNode2name()))
+					logger.info("No dest vertex " + k.getNode2name() + " in object " + jsonObject);
+				
+			}
+		});
+		
+/*
 		for (int i = 0; i < mapperConfig.size(); i++) {
 			TrippleStoreConf configItem = mapperConfig.get(i);
 			if (jsonObject.containsKey(configItem.getNode1name())
 					&& jsonObject.containsKey(configItem.getNode2name())) {
 
-				logger.debug("MATCHED RULE: " + configItem.printElement());
+				logger.info("MATCHED RULE: " + configItem.printElement());
 
 				String node1 = jsonObject.get(configItem.getNode1name()).toString();
 				String node2 = jsonObject.get(configItem.getNode2name()).toString();
@@ -50,7 +96,7 @@ public class TelemetryToGraphMapper implements Serializable{
 				String node2type = configItem.getNode2type();
 				String verb = configItem.getVerbname();
 
-				logger.debug("Extracted relation: " + node1 + " " + verb + " " + node2 + " " + node1type + " "
+				logger.info("Extracted relation: " + node1 + " " + verb + " " + node2 + " " + node1type + " "
 						+ node2type + " from object: " + jsonObject + " via rule " + configItem.printElement());
 
 				Ontology ont = new Ontology(node1, verb, node2, node1type, node2type);
@@ -58,14 +104,46 @@ public class TelemetryToGraphMapper implements Serializable{
 
 			} else {
 				if (!jsonObject.containsKey(configItem.getNode1name()))
-					logger.debug("No source vertex " + configItem.getNode1name() + " in object " + jsonObject);
+					logger.info("No source vertex " + configItem.getNode1name() + " in object " + jsonObject);
 
 				if (!jsonObject.containsKey(configItem.getNode2name()))
-					logger.debug("No dest vertex " + configItem.getNode2name() + " in object " + jsonObject);
+					logger.info("No dest vertex " + configItem.getNode2name() + " in object " + jsonObject);
 			}
-		}
+		}*/
 
 		return ontologies;
+	}
+	
+	private boolean validateRelation(TrippleStoreConf k) throws IllegalArgumentException
+	{
+		
+		if(k.getNode1name() == null || k.getNode1name().toString().length() == 0)
+			throw new IllegalArgumentException("node1Name is invalid in relation" + k.toString());
+
+		if(k.getNode2name() == null || k.getNode2name().toString().length() == 0)
+			throw new IllegalArgumentException("node2Name is invalid in relation" + k.toString());
+		
+		if(k.getNode1type() == null || k.getNode1type().toString().length() == 0)
+			throw new IllegalArgumentException("Node1type is invalid in relation" + k.toString());
+		
+		if(k.getNode2type() == null || k.getNode2name().toString().length() == 0)
+			throw new IllegalArgumentException("Node2type is invalid in relation" + k.toString());
+		
+		if(k.getVerbname() == null || k.getVerbname().toString().length() == 0)
+			throw new IllegalArgumentException("Verbname is invalid in relation" + k.toString());
+		
+		return true;
+	}
+	
+	private boolean validateMessage(JSONObject jo) throws IllegalArgumentException
+	{
+		if(jo.isEmpty())
+			throw new IllegalArgumentException("Received empty JSON " + jo);
+		
+		if(jo.values().isEmpty())
+			throw new IllegalArgumentException("No values in JSON " + jo);
+		
+		return true;
 	}
 
 }
