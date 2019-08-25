@@ -57,7 +57,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 
 	public void testMappings() {
 
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject);
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject, "sampleTIID");
 
 		assertTrue(ontologies.size() == 2);
 
@@ -83,7 +83,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 
 		jo.remove("ip_src");
 
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jo);
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jo, "sampleTIID");
 
 		assertTrue(ontologies.isEmpty());
 	}
@@ -95,7 +95,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 
 		 jo.remove("ip_dst");
 
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jo);
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jo, "sampleTIID");
 
 		assertTrue(ontologies.size()==1);
 		assertTrue(ontologies.get(0).getVertex1().equals("someuser1"));
@@ -107,7 +107,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		jo.putAll(jsonObject);
 		
 		jo.remove("username");
-		ontologies = mpr.getOntologies(jo);
+		ontologies = mpr.getOntologies(jo, "sampleTIID");
 		
 		assertTrue(ontologies.size()==1);
 		assertTrue(ontologies.get(0).getVertex1().equals("1.1.1.1"));
@@ -116,7 +116,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		assertTrue(ontologies.get(0).getVertex2type().equals("host"));
 		
 		jo.remove("ip_dst");
-		ontologies = mpr.getOntologies(jo);
+		ontologies = mpr.getOntologies(jo, "sampleTIID");
 		assertTrue(ontologies.size()==0);
 
 		
@@ -131,7 +131,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		
 		mpr = new TelemetryToGraphMapper(mappings);
 		
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject);	
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject, "sampleTIID");	
 		assertTrue(ontologies.size() == 3);
 		
 
@@ -163,7 +163,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		
 		mpr = new TelemetryToGraphMapper(mappings);
 		
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject);	
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject, "sampleTIID");	
 		assertTrue(ontologies.size() == 0);
 		
 	}
@@ -181,7 +181,7 @@ public class TelemetryToGraphMapperTest extends TestCase {
 		
 		mpr = new TelemetryToGraphMapper(mappings);
 		
-		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject);	
+		ArrayList<Ontology> ontologies = mpr.getOntologies(jsonObject, "sampleTIID");	
 		assertTrue(ontologies.size() == 0);
 		
 	}
