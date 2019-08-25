@@ -60,15 +60,7 @@ public class TelemetryToGraphMapper implements Serializable {
 				} else if (jsonObject.get(k.getNode2name()) == null) {
 					logger.info("Unable to set relation: Node2 value is null for relation : " + k.printElement()
 							+ " for json: " + jsonObject);
-				} else if (jsonObject.get(k.getNode1type()) == null) {
-					logger.info("Unable to set relation: Node1Type value is null for relation : " + k.printElement()
-							+ " for json: " + jsonObject);
-				} else if (jsonObject.get(k.getNode2type()) == null) {
-					logger.info("Unable to set relation: Node2Type value is null for relation : " + k.printElement()
-							+ " for json: " + jsonObject);
-				} else if (jsonObject.get(k.getVerbname()) == null) {
-					logger.info("Unable to set relation: Verb value is null for relation : " + k.printElement()
-							+ " for json: " + jsonObject);
+				
 				} else {
 
 					String node1 = jsonObject.get(k.getNode1name()).toString();
