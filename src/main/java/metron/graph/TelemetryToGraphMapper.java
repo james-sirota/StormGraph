@@ -43,22 +43,22 @@ public class TelemetryToGraphMapper implements Serializable {
 
 	}
 
-	public ArrayList<Ontology> getOntologies(JSONObject jsonObject) {
+	public ArrayList<Ontology> getOntologies(JSONObject jsonObject, String tid) {
 		ArrayList<Ontology> ontologies = new ArrayList<Ontology>();
 
 		mapperConfig.forEach((k) -> {
-			logger.info("Looking at config item : " + k.printElement() + " for json: " + jsonObject);
+			logger.info("Tuple id:" + tid + "::"+"Looking at config item : " + k.printElement() + " for json: " + jsonObject);
 			validateRelation(k);
 			validateMessage(jsonObject);
 
 			if (jsonObject.containsKey(k.getNode1name()) && jsonObject.containsKey(k.getNode2name())) {
-				logger.info("Matched rule : " + k.printElement() + " for json: " + jsonObject);
+				logger.info("Tuple id:" + tid + "::"+"Matched rule : " + k.printElement() + " for json: " + jsonObject);
 
 				if (jsonObject.get(k.getNode1name()) == null) {
-					logger.info("Unable to set relation: Node1 value is null for relation : " + k.printElement()
+					logger.info("Tuple id:" + tid + "::"+"Unable to set relation: Node1 value is null for relation : " + k.printElement()
 							+ " for json: " + jsonObject);
 				} else if (jsonObject.get(k.getNode2name()) == null) {
-					logger.info("Unable to set relation: Node2 value is null for relation : " + k.printElement()
+					logger.info("Tuple id:" + tid + "::"+"Unable to set relation: Node2 value is null for relation : " + k.printElement()
 							+ " for json: " + jsonObject);
 				
 				} else {
@@ -69,7 +69,7 @@ public class TelemetryToGraphMapper implements Serializable {
 					String node2type = k.getNode2type();
 					String verb = k.getVerbname();
 
-					logger.info("Extracted relation: " + node1 + " " + verb + " " + node2 + " " + node1type + " "
+					logger.info("Tuple id:" + tid + "::"+"Extracted relation: " + node1 + " " + verb + " " + node2 + " " + node1type + " "
 							+ node2type + " from object: " + jsonObject + " via rule " + k.printElement()
 							+ " for item: " + jsonObject);
 
@@ -80,41 +80,13 @@ public class TelemetryToGraphMapper implements Serializable {
 
 			else {
 				if (!jsonObject.containsKey(k.getNode1name()))
-					logger.info("No source vertex " + k.getNode1name() + " in object " + jsonObject);
+					logger.info("Tuple id:" + tid + "::"+"No source vertex " + k.getNode1name() + " in object " + jsonObject);
 
 				if (!jsonObject.containsKey(k.getNode2name()))
-					logger.info("No dest vertex " + k.getNode2name() + " in object " + jsonObject);
+					logger.info("Tuple id:" + tid + "::"+"No dest vertex " + k.getNode2name() + " in object " + jsonObject);
 
 			}
 		});
-
-		/*
-		 * for (int i = 0; i < mapperConfig.size(); i++) { TrippleStoreConf configItem =
-		 * mapperConfig.get(i); if (jsonObject.containsKey(configItem.getNode1name()) &&
-		 * jsonObject.containsKey(configItem.getNode2name())) {
-		 * 
-		 * logger.info("MATCHED RULE: " + configItem.printElement());
-		 * 
-		 * String node1 = jsonObject.get(configItem.getNode1name()).toString(); String
-		 * node2 = jsonObject.get(configItem.getNode2name()).toString(); String
-		 * node1type = configItem.getNode1type(); String node2type =
-		 * configItem.getNode2type(); String verb = configItem.getVerbname();
-		 * 
-		 * logger.info("Extracted relation: " + node1 + " " + verb + " " + node2 + " " +
-		 * node1type + " " + node2type + " from object: " + jsonObject + " via rule " +
-		 * configItem.printElement());
-		 * 
-		 * Ontology ont = new Ontology(node1, verb, node2, node1type, node2type);
-		 * ontologies.add(ont);
-		 * 
-		 * } else { if (!jsonObject.containsKey(configItem.getNode1name()))
-		 * logger.info("No source vertex " + configItem.getNode1name() + " in object " +
-		 * jsonObject);
-		 * 
-		 * if (!jsonObject.containsKey(configItem.getNode2name()))
-		 * logger.info("No dest vertex " + configItem.getNode2name() + " in object " +
-		 * jsonObject); } }
-		 */
 
 		return ontologies;
 	}

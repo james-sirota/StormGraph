@@ -24,12 +24,12 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +45,8 @@ public class MapperBolt extends BaseRichBolt {
 	private String tupleToLookFor;
 	private Logger logger;
 	private TelemetryToGraphMapper mapper;
+
+	private final String ARRAY_PREFIX = "array";
 
 	@SuppressWarnings("rawtypes")
 	public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
@@ -71,59 +73,68 @@ public class MapperBolt extends BaseRichBolt {
 	public void execute(Tuple tuple) {
 
 		try {
+			
+			MessageId tid = tuple.getMessageId();
 
-			logger.info("Got tupple: " + tuple);
+			logger.info("Tuple id:" + tid + "::"+ "Received a new tuple from spout: " + tuple);
 
-			String extractedTuple = tuple.getStringByField(tupleToLookFor);
-			logger.info("Extracted tupple: " + extractedTuple);
+			String extractedContent = tuple.getStringByField(tupleToLookFor).trim();
+			logger.info("Tuple id:" + tid + "::"+"Extracted tupple content from original spout tuple: " + extractedContent);
 
-			if (extractedTuple.length() == 0 || extractedTuple == null || extractedTuple == "") {
-				logger.info("Received empty tuple with id, ignoring: " + tuple.getMessageId());
-				collector.ack(tuple);
-			} else {
-				// Read JSON file
-				Object obj = parser.parse("{ \"array\":" + tuple.getStringByField(tupleToLookFor).trim() + "}");
+			if (extractedContent.length() == 0 || extractedContent == null || extractedContent == "") 
+				throw new NoSuchFieldException("Tuple id:" + tid + "::"+"Invalid content JSON inside tuple: " + tuple);
+				
+				Object obj = parser.parse("{ \""+ ARRAY_PREFIX +"\":" + extractedContent + "}");
 
-				logger.info("Attempting to parse: " + obj);
+				logger.info("Tuple id:" + tid + "::"+"Attempting to parse: " + obj + " from content: " + extractedContent);
 
 				JSONObject jsonObject = (JSONObject) obj;
 
-				JSONArray jList = (JSONArray) jsonObject.get("array");
+				JSONArray jList = (JSONArray) jsonObject.get(ARRAY_PREFIX);
 
-				logger.info("Parsed tupple: " + jList);
+				logger.info("Tuple id:" + tid + "::"+"Parsed array tupple: " + jList + " from " + extractedContent);
+				
+				if (jList.isEmpty())
+					throw new IllegalArgumentException("Tuple id:" + tid + "::"+"List of valid JSON messages does not exist inside: " + tuple);
 
 				Iterator<?> iter = jList.iterator();
+				
 
 				while (iter.hasNext()) {
 
 					JSONObject jo = (JSONObject) iter.next();
-					logger.info("Inner object is: " + jo);
+					logger.info("Tuple id:" + tid + "::"+"Prased object is: " + jo + "from JSON list " + jList);
 
-					if (jo.keySet().size() == 0)
-						throw new IllegalArgumentException(jo + " is a zero-sized message");
+					if (jo.isEmpty())
+						throw new NoSuchFieldException(jo + " is a zero-sized message");
 
-					ArrayList<Ontology> ontologyList = mapper.getOntologies(jo);
+					ArrayList<Ontology> ontologyList = mapper.getOntologies(jo, tid.toString());
 
 					if (ontologyList.isEmpty())
-						logger.info("No ontologies found for object: " + jo);
+						logger.info("Tuple id:" + tid + "::"+"No ontologies found for object: " + jo);
+					
+					ontologyList.forEach((ont) -> {
+						logger.info("Tuple id:" + tid + "::"+"Emmiting ontology: " + ont.printElement());
+						collector.emit(new Values(ont));
+					});
 
-					for (int i = 0; i < ontologyList.size(); i++) {
+				/*	for (int i = 0; i < ontologyList.size(); i++) {
 						Ontology ont = ontologyList.get(i);
 
 						logger.info("Emmiting ontology: " + ont.printElement());
 
 						collector.emit(new Values(ont));
 
-					}
+					}*/
 				}
 
 				collector.ack(tuple);
-			}
+			
 		}
 
 		catch (Exception e) {
 			collector.fail(tuple);
-			logger.error("Failed to parse object tuple:" + tuple);
+			logger.error("Tuple id:" + tuple.getMessageId() + "::"+"Failed to parse object tuple:" + tuple);
 			e.printStackTrace();
 		}
 
