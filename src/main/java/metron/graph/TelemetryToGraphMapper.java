@@ -37,7 +37,7 @@ public class TelemetryToGraphMapper implements Serializable{
 		
 		mapperConfig.forEach((k)->
 		{
-			logger.info("MapperConfigItem : " + k.toString());
+			logger.info("MapperConfigItem : " + k.printElement());
 			validateRelation(k);
 			
 		});
@@ -50,13 +50,13 @@ public class TelemetryToGraphMapper implements Serializable{
 		
 		mapperConfig.forEach((k)->
 		{
-			logger.info("Looking at config item : " + k.toString() + " for json: " + jsonObject);
+			logger.info("Looking at config item : " + k.printElement() + " for json: " + jsonObject);
 			validateRelation(k);
 			validateMessage(jsonObject);
 			
 			if (jsonObject.containsKey(k.getNode1name()) && jsonObject.containsKey(k.getNode2name()))
 			{
-				logger.info("Matched rule : " + k.toString() + " for json: " + jsonObject);
+				logger.info("Matched rule : " + k.printElement() + " for json: " + jsonObject);
 			
 				String node1 = jsonObject.get(k.getNode1name()).toString();
 				String node2 = jsonObject.get(k.getNode2name()).toString();
@@ -118,19 +118,19 @@ public class TelemetryToGraphMapper implements Serializable{
 	{
 		
 		if(k.getNode1name() == null || k.getNode1name().toString().length() == 0)
-			throw new IllegalArgumentException("node1Name is invalid in relation" + k.toString());
+			throw new IllegalArgumentException("node1Name is invalid in relation" + k.printElement());
 
 		if(k.getNode2name() == null || k.getNode2name().toString().length() == 0)
-			throw new IllegalArgumentException("node2Name is invalid in relation" + k.toString());
+			throw new IllegalArgumentException("node2Name is invalid in relation" + k.printElement());
 		
 		if(k.getNode1type() == null || k.getNode1type().toString().length() == 0)
-			throw new IllegalArgumentException("Node1type is invalid in relation" + k.toString());
+			throw new IllegalArgumentException("Node1type is invalid in relation" + k.printElement());
 		
 		if(k.getNode2type() == null || k.getNode2name().toString().length() == 0)
-			throw new IllegalArgumentException("Node2type is invalid in relation" + k.toString());
+			throw new IllegalArgumentException("Node2type is invalid in relation" + k.printElement());
 		
 		if(k.getVerbname() == null || k.getVerbname().toString().length() == 0)
-			throw new IllegalArgumentException("Verbname is invalid in relation" + k.toString());
+			throw new IllegalArgumentException("Verbname is invalid in relation" + k.printElement());
 		
 		return true;
 	}
