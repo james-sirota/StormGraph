@@ -46,12 +46,15 @@ public class JanusBolt extends BaseRichBolt {
 		this.collector = collector;
 		logger = LoggerFactory.getLogger(JanusBolt.class);
 
-		logger.trace("Initializing janus bolt...");
+		logger.info("Initializing janus bolt...");
 
 		JANUS_CONFIG = ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.backEndConfigLocation", conf);
+		
+		
+		
 		TTL_VALUE = Integer.parseInt(ConfigHandler.checkForNullConfigAndLoad("top.graphbolt.ttlDays", conf));
 
-		logger.trace("Initializing Janus DAO...");
+		logger.info("Initializing Janus DAO...");
 
 		File file = new File(JANUS_CONFIG);
 
