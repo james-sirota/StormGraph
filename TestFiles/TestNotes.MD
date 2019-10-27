@@ -24,3 +24,15 @@ cat /etc/graph/StormGraph/TestFiles/asaInput.log | bin/kafka-console-producer.sh
 bin/kafka-console-consumer.sh --bootstrap-server ip-10-0-141-91.us-west-2.compute.internal:6667 --topic graph-in1 --offset 0 --partition 0
 bin/kafka-console-consumer.sh --bootstrap-server ip-10-0-141-91.us-west-2.compute.internal:6667 --topic graph-in1 --offset 0 --partition 1
 ```
+## Connecting to Tinkerpop
+
+```
+:remote connect tinkerpop.server conf/remote-objects.yaml session
+:remote console
+```
+Test on the graph of the gods
+
+```
+GraphOfTheGodsFactory.create(graph)
+GraphOfTheGodsFactory.load(graph)
+```
