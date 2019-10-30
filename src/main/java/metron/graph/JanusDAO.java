@@ -20,7 +20,10 @@ import java.io.File;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.structure.T;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.janusgraph.core.ConfiguredGraphFactory;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
@@ -36,6 +39,8 @@ public class JanusDAO {
 
 	private String CONFIG_FILE;
 	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
+	
+	private String GRAPH_NAME = "graph";
 
 	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
 		CONFIG_FILE = configFIle;
@@ -49,10 +54,29 @@ public class JanusDAO {
 			System.exit(0);
 		}
 		Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
+		
+		/*
+		 * 
+		 * Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
 
-		g = JanusGraphFactory.open(conf);
+			g = JanusGraphFactory.open(conf);
+		 */
+		
+		ConfiguredGraphFactory.createConfiguration(conf);
+
+		g = ConfiguredGraphFactory.open(GRAPH_NAME);
 
 		// DEFAULT_TTL_DAYS = ttlDays; TODO: implement this later
+		
+		logger.info("Testing the graph connection....");
+		
+		JanusGraphTransaction tx = g.newTransaction();
+		Long vertexCount = tx.traversal().V().count().next();
+		Long edgeCount = tx.traversal().E().count().next();
+		tx.commit();
+		tx.close();
+		
+		logger.info(String.format("Number of vertices is: %d And number of edges is: %d", vertexCount, edgeCount));
 
 	}
 
