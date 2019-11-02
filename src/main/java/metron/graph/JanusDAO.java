@@ -40,7 +40,7 @@ public class JanusDAO {
 	private String CONFIG_FILE;
 	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
 	
-	private String GRAPH_NAME = "graph";
+	private String GRAPH_NAME = "janus_test";
 
 	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
 		CONFIG_FILE = configFIle;
@@ -53,7 +53,7 @@ public class JanusDAO {
 			logger.error("Cannot find: " + CONFIG_FILE);
 			System.exit(0);
 		}
-		Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
+		//Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
 		
 		/*
 		 * 
@@ -62,7 +62,7 @@ public class JanusDAO {
 			g = JanusGraphFactory.open(conf);
 		 */
 		
-		ConfiguredGraphFactory.createConfiguration(conf);
+		//ConfiguredGraphFactory.createConfiguration(conf);
 
 		g = ConfiguredGraphFactory.open(GRAPH_NAME);
 
