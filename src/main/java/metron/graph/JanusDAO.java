@@ -16,16 +16,15 @@
 package metron.graph;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
+import org.apache.commons.configuration.MapConfiguration;
 import org.apache.tinkerpop.gremlin.structure.T;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.janusgraph.core.ConfiguredGraphFactory;
 import org.janusgraph.core.JanusGraph;
-import org.janusgraph.core.JanusGraphFactory;
 import org.janusgraph.core.JanusGraphTransaction;
 import org.janusgraph.core.JanusGraphVertex;
 import org.slf4j.Logger;
@@ -63,6 +62,29 @@ public class JanusDAO {
 		 */
 		
 		//ConfiguredGraphFactory.createConfiguration(conf);
+		
+		Map map = new HashMap<String, Object>();
+
+		map.put("storage.backend","hbase");
+		map.put("graph.graphname","test_janus");
+		map.put("storage.hostname","ip-10-0-141-91.us-west-2.compute.internal");
+		map.put("storage.hbase.table","metron_graph");
+		map.put("storage.hbase.ext.zookeeper.znode.parent","/hbase-unsecure");
+		map.put("cache.db-cache "," true");
+		map.put("cache.db-cache-clean-wait "," 20");
+		map.put("cache.db-cache-time "," 180000");
+		map.put("cache.db-cache-size "," 0.5");
+		map.put("index.search.backend","solr");
+		map.put("index.search.solr.http-urls","http://ip-10-0-141-91.us-west-2.compute.internal:8983/solr");
+		map.put("index.search.solr.mode","cloud");
+		map.put("index.search.solr.zookeeper-url","ip-10-0-141-91.us-west-2.compute.internal:2181/solr");
+		map.put("index.search.solr.configset","janusgraph");
+
+		ConfiguredGraphFactory.createConfiguration(new MapConfiguration(map));
+		
+		Set<String> graphs = ConfiguredGraphFactory.getGraphNames();
+		logger.info(String.format("Available graphs: %d ", graphs.toString()));
+
 
 		g = ConfiguredGraphFactory.open(GRAPH_NAME);
 
