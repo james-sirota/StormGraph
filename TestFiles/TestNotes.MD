@@ -65,3 +65,7 @@ scan 'metron_graph'
 GraphOfTheGodsFactory.create(graph)
 GraphOfTheGodsFactory.load(graph)
 ```
+## Attempt a test traversal
+```
+ConfiguredGraphFactory.open("test_janus").traversal().V()
+```
