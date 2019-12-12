@@ -52,6 +52,13 @@ map.put("index.search.solr.configset","janusgraph");
 ConfiguredGraphFactory.createTemplateConfiguration(new MapConfiguration(map));
 ```
 
+## Check to make sure that the table was created in hbase
+
+```
+hbase shell
+scan 'metron_graph'
+```
+
 ## Test on the graph of the gods
 
 ```
