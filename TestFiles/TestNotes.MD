@@ -62,6 +62,7 @@ scan 'metron_graph'
 ## Test on the graph of the gods
 
 ```
+graph = ConfiguredGraphFactory.open("test_janus")
 GraphOfTheGodsFactory.create(graph)
 GraphOfTheGodsFactory.load(graph)
 ```
