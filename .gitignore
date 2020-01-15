@@ -8,6 +8,8 @@ tomcat
 # Default excludes
 #
 
+dependency-reduced-pom.xml
+
 # Binaries
 *.7z
 *.dmg

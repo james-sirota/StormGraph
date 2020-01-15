@@ -22,7 +22,10 @@ import java.util.Set;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.MapConfiguration;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.T;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.util.empty.EmptyGraph;
 import org.janusgraph.core.ConfiguredGraphFactory;
 import org.janusgraph.core.JanusGraph;
 import org.janusgraph.core.JanusGraphTransaction;
@@ -32,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class JanusDAO {
 
-	private JanusGraph g;
+	private GraphTraversalSource g;
 
 	// private int DEFAULT_TTL_DAYS;
 
@@ -41,7 +44,7 @@ public class JanusDAO {
 	
 	private String GRAPH_NAME = "janus_test";
 
-	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
+	public JanusDAO(String configFIle, int ttlDays) throws Exception {
 		CONFIG_FILE = configFIle;
 
 		File file = new File(CONFIG_FILE);
@@ -52,51 +55,15 @@ public class JanusDAO {
 			logger.error("Cannot find: " + CONFIG_FILE);
 			System.exit(0);
 		}
-		//Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
-		
-		/*
-		 * 
-		 * Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
 
-			g = JanusGraphFactory.open(conf);
-		 */
-		
-		//ConfiguredGraphFactory.createConfiguration(conf);
-		
-		Map map = new HashMap<String, Object>();
-
-		map.put("storage.backend","hbase");
-		map.put("graph.graphname","test_janus");
-		map.put("storage.hostname","ip-10-0-141-91.us-west-2.compute.internal");
-		map.put("storage.hbase.table","metron_graph");
-		map.put("storage.hbase.ext.zookeeper.znode.parent","/hbase-unsecure");
-		map.put("cache.db-cache "," true");
-		map.put("cache.db-cache-clean-wait "," 20");
-		map.put("cache.db-cache-time "," 180000");
-		map.put("cache.db-cache-size "," 0.5");
-		map.put("index.search.backend","solr");
-		map.put("index.search.solr.http-urls","http://ip-10-0-141-91.us-west-2.compute.internal:8983/solr");
-		map.put("index.search.solr.mode","cloud");
-		map.put("index.search.solr.zookeeper-url","ip-10-0-141-91.us-west-2.compute.internal:2181/solr");
-		map.put("index.search.solr.configset","janusgraph");
-
-		ConfiguredGraphFactory.createConfiguration(new MapConfiguration(map));
-		
-		Set<String> graphs = ConfiguredGraphFactory.getGraphNames();
-		logger.info(String.format("Available graphs: %d ", graphs.toString()));
-
-
-		g = ConfiguredGraphFactory.open(GRAPH_NAME);
-
+		g = EmptyGraph.instance().traversal().withRemote("conf/");
 		// DEFAULT_TTL_DAYS = ttlDays; TODO: implement this later
 		
 		logger.info("Testing the graph connection....");
 		
-		JanusGraphTransaction tx = g.newTransaction();
-		Long vertexCount = tx.traversal().V().count().next();
-		Long edgeCount = tx.traversal().E().count().next();
-		tx.commit();
-		tx.close();
+
+		Long vertexCount = g.V().count().next();
+		Long edgeCount = g.E().count().next();
 		
 		logger.info(String.format("Number of vertices is: %d And number of edges is: %d", vertexCount, edgeCount));
 
@@ -106,48 +73,54 @@ public class JanusDAO {
 			String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeName) {
 
 		String currentTime = String.valueOf(System.currentTimeMillis());
-		JanusGraphVertex a = null;
-		JanusGraphVertex b = null;
+		Vertex a = null;
+		Vertex b = null;
 
 		boolean node1IsNew = false;
 		boolean node2IsNew = false;
 
-		JanusGraphTransaction tx = g.newTransaction();
 
 		logger.debug("Examining vertex: " + node1Label + " : " + node1PropertyKey + " : " + node1PropertyValue);
 		logger.debug("Examining vertex: " + node2Label + " : " + node2PropertyKey + " : " + node2PropertyValue);
 
-		boolean sourceNodeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
+		boolean sourceNodeExists = g.V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
 				.hasNext();
 		if (!sourceNodeExists) {
 			logger.debug("Creating new source node because does not exist: " + node1Label + " : " + node1PropertyKey
 					+ " : " + node1PropertyValue);
 
-			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
-			logger.debug("Created an outVertex: " + node1PropertyValue + " with node id " + a.longId());
+//			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
+			a = g.addV(node1Label)
+					.property(node1PropertyKey, node1PropertyValue)
+					.property("created", currentTime).next();
+			logger.debug("Created an outVertex: " + node1PropertyValue + " with node id " + a.id());
 
 			node1IsNew = true;
 
 		}
 
-		boolean destNodeExists = tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label)
+		boolean destNodeExists = g.V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label)
 				.hasNext();
 
 		if (!destNodeExists) {
 			logger.debug("Creating new dest node because does not exist: " + node2Label + " : " + node2PropertyKey
 					+ " : " + node2PropertyValue);
-			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
-			logger.debug("Created an inVertex:" + node2PropertyValue + " with node id " + b.longId());
+//			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
+			b = g.addV(node2Label)
+					.property(node2PropertyKey, node2PropertyValue)
+					.property("created", currentTime).next();
+			logger.debug("Created an inVertex:" + node2PropertyValue + " with node id " + b.id());
 
 			node2IsNew = true;
 
 		}
-		a = (JanusGraphVertex) tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).next();
-		b = (JanusGraphVertex) tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).next();
+		a = g.V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).next();
+		b = g.V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).next();
 
 		if (node1IsNew && node2IsNew) {
 			logger.debug("Both nodes are new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
 		} else if (node1IsNew && !node2IsNew) {
 			logger.debug("Only node1 is new " + node1PropertyValue + " : " + node2PropertyValue);
 			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
@@ -167,8 +140,7 @@ public class JanusDAO {
 			}
 		}
 
-		tx.commit();
-		tx.close();
+
 
 	}
 
