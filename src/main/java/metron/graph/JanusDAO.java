@@ -39,26 +39,24 @@ public class JanusDAO {
 
 	// private int DEFAULT_TTL_DAYS;
 
-	private String CONFIG_FILE;
 	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
 	
 	private String GRAPH_NAME = "janus_test";
 
 	public JanusDAO(String configFIle, int ttlDays) throws Exception {
-		CONFIG_FILE = configFIle;
 
-		File file = new File(CONFIG_FILE);
+		File file = new File(configFIle);
 
-		logger.info("Loading config from: " + CONFIG_FILE);
+		logger.info("Loading config from: " + configFIle);
 
 		if (!file.exists()) {
-			logger.error("Cannot find: " + CONFIG_FILE);
+			logger.error("Cannot find: " + configFIle);
 			System.exit(0);
 		}
 
-		g = EmptyGraph.instance().traversal().withRemote("conf/");
+		g = EmptyGraph.instance().traversal().withRemote(configFIle);
 		// DEFAULT_TTL_DAYS = ttlDays; TODO: implement this later
-		
+
 		logger.info("Testing the graph connection....");
 		
 
@@ -123,18 +121,22 @@ public class JanusDAO {
 			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
 		} else if (node1IsNew && !node2IsNew) {
 			logger.debug("Only node1 is new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && node2IsNew) {
 			logger.debug("Only node2 is new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && !node2IsNew) {
-			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
-					.outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
+//			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
+//					.outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
+			boolean edgeExists = g.V(a).out(edgeName).is(b).hasNext();
 			logger.debug("Both nodes are not new, does the edge between them already exist?: " + edgeExists);
 
 			if (!edgeExists) {
 				logger.debug("Creating a new edge between " + node1PropertyValue + " : " + node2PropertyValue);
-				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+				g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
 			} else {
 				// TODO figure out how to set TTL
 			}

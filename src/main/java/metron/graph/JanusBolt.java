@@ -65,7 +65,7 @@ public class JanusBolt extends BaseRichBolt {
 
 		try {
 			jd = new JanusDAO(JANUS_CONFIG, TTL_VALUE);
-		} catch (ConfigurationException | InterruptedException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
