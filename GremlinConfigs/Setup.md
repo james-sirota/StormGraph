@@ -1,4 +1,4 @@
-#Setup Instructions
+# Setup Instructions
 This document describes the setup required to connect this graph topology with a JanusGraph server.
 
 ## Janus Graph
