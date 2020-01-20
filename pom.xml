@@ -13,8 +13,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<janusgraph.version>0.2.2</janusgraph.version>
-		<tinkerpop.version>3.2.9</tinkerpop.version>
+		<janusgraph.version>0.3.2</janusgraph.version>
+		<tinkerpop.version>3.3.3</tinkerpop.version>
 	</properties>
 
 	<dependencies>
