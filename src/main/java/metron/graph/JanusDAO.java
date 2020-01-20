@@ -16,12 +16,20 @@
 package metron.graph;
 
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.structure.util.empty.EmptyGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+
+import static org.apache.tinkerpop.gremlin.process.traversal.Compare.eq;
+import static org.apache.tinkerpop.gremlin.process.traversal.P.eq;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal.Symbols.unfold;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.addE;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.out;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.unfold;
 
 public class JanusDAO {
 
@@ -57,10 +65,38 @@ public class JanusDAO {
 
 	}
 
-	public synchronized void linkNodes(String node1Label, String node2Label, String node1PropertyKey,
-			String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeName) {
+	public synchronized void singleTraversalLinkNodes(String node1Label, String node2Label, String node1PropertyKey,
+									   String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeLabel) {
 
 		String currentTime = String.valueOf(System.currentTimeMillis());
+
+		g
+				// Upsert vertex 1
+				.V().has(node1Label, node1PropertyKey, node1PropertyValue).fold()
+				.coalesce(
+						__.unfold(),
+						__.addV(node1Label)
+								.property(node1PropertyKey, node1PropertyValue))
+				.property("created", currentTime).aggregate("from")
+				// Upser vertex 2
+				.V().has(node2Label, node2PropertyKey, node2PropertyValue).fold()
+				.coalesce(
+						__.unfold(),
+						__.addV(node2Label)
+								.property(node2PropertyKey, node2PropertyValue))
+				.property("created", currentTime).as("to")
+				// Upsert edge
+				.select("from").unfold()
+				.coalesce(
+						out(edgeLabel).where(eq("to")).inE(),
+						addE(edgeLabel).to("to").property("created", currentTime)).iterate();
+	}
+
+	public synchronized void linkNodes(String node1Label, String node2Label, String node1PropertyKey,
+			String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeLabel) {
+
+		String currentTime = String.valueOf(System.currentTimeMillis());
+
 		Vertex a = null;
 		Vertex b = null;
 
@@ -108,25 +144,25 @@ public class JanusDAO {
 		if (node1IsNew && node2IsNew) {
 			logger.debug("Both nodes are new " + node1PropertyValue + " : " + node2PropertyValue);
 //			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
-			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (node1IsNew && !node2IsNew) {
 			logger.debug("Only node1 is new " + node1PropertyValue + " : " + node2PropertyValue);
 //			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
-			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && node2IsNew) {
 			logger.debug("Only node2 is new " + node1PropertyValue + " : " + node2PropertyValue);
 //			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
-			g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && !node2IsNew) {
 //			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
 //					.outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
-			boolean edgeExists = g.V(a).out(edgeName).is(b).hasNext();
+			boolean edgeExists = g.V(a).out(edgeLabel).is(b).hasNext();
 			logger.debug("Both nodes are not new, does the edge between them already exist?: " + edgeExists);
 
 			if (!edgeExists) {
 				logger.debug("Creating a new edge between " + node1PropertyValue + " : " + node2PropertyValue);
 //				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
-				g.V(a).as("from").V(b).addE(edgeName).from("from").property("created", currentTime).next();
+				g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 			} else {
 				// TODO figure out how to set TTL
 			}
