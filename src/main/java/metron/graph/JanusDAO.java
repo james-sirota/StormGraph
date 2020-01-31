@@ -15,160 +15,160 @@
 
 package metron.graph;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.MapConfiguration;
-import org.apache.tinkerpop.gremlin.structure.T;
-import org.janusgraph.core.ConfiguredGraphFactory;
-import org.janusgraph.core.JanusGraph;
-import org.janusgraph.core.JanusGraphTransaction;
-import org.janusgraph.core.JanusGraphVertex;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
+import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.apache.tinkerpop.gremlin.structure.util.empty.EmptyGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+
+import static org.apache.tinkerpop.gremlin.process.traversal.Compare.eq;
+import static org.apache.tinkerpop.gremlin.process.traversal.P.eq;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal.Symbols.unfold;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.addE;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.out;
+import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.unfold;
+
 public class JanusDAO {
 
-	private JanusGraph g;
+	private GraphTraversalSource g;
 
 	// private int DEFAULT_TTL_DAYS;
 
-	private String CONFIG_FILE;
 	private Logger logger = LoggerFactory.getLogger(ConfigHandler.class);
 	
 	private String GRAPH_NAME = "janus_test";
 
-	public JanusDAO(String configFIle, int ttlDays) throws ConfigurationException, InterruptedException {
-		CONFIG_FILE = configFIle;
+	public JanusDAO(String configFIle, int ttlDays) throws Exception {
 
-		File file = new File(CONFIG_FILE);
+		File file = new File(configFIle);
 
-		logger.info("Loading config from: " + CONFIG_FILE);
+		logger.info("Loading config from: " + configFIle);
 
 		if (!file.exists()) {
-			logger.error("Cannot find: " + CONFIG_FILE);
+			logger.error("Cannot find: " + configFIle);
 			System.exit(0);
 		}
-		//Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
-		
-		/*
-		 * 
-		 * Configuration conf = new PropertiesConfiguration(CONFIG_FILE);
 
-			g = JanusGraphFactory.open(conf);
-		 */
-		
-		//ConfiguredGraphFactory.createConfiguration(conf);
-		
-		Map map = new HashMap<String, Object>();
-
-		map.put("storage.backend","hbase");
-		map.put("graph.graphname","test_janus");
-		map.put("storage.hostname","ip-10-0-141-91.us-west-2.compute.internal");
-		map.put("storage.hbase.table","metron_graph");
-		map.put("storage.hbase.ext.zookeeper.znode.parent","/hbase-unsecure");
-		map.put("cache.db-cache "," true");
-		map.put("cache.db-cache-clean-wait "," 20");
-		map.put("cache.db-cache-time "," 180000");
-		map.put("cache.db-cache-size "," 0.5");
-		map.put("index.search.backend","solr");
-		map.put("index.search.solr.http-urls","http://ip-10-0-141-91.us-west-2.compute.internal:8983/solr");
-		map.put("index.search.solr.mode","cloud");
-		map.put("index.search.solr.zookeeper-url","ip-10-0-141-91.us-west-2.compute.internal:2181/solr");
-		map.put("index.search.solr.configset","janusgraph");
-
-		ConfiguredGraphFactory.createConfiguration(new MapConfiguration(map));
-		
-		Set<String> graphs = ConfiguredGraphFactory.getGraphNames();
-		logger.info(String.format("Available graphs: %d ", graphs.toString()));
-
-
-		g = ConfiguredGraphFactory.open(GRAPH_NAME);
-
+		g = EmptyGraph.instance().traversal().withRemote(configFIle);
 		// DEFAULT_TTL_DAYS = ttlDays; TODO: implement this later
-		
+
 		logger.info("Testing the graph connection....");
 		
-		JanusGraphTransaction tx = g.newTransaction();
-		Long vertexCount = tx.traversal().V().count().next();
-		Long edgeCount = tx.traversal().E().count().next();
-		tx.commit();
-		tx.close();
+
+		Long vertexCount = g.V().count().next();
+		Long edgeCount = g.E().count().next();
 		
 		logger.info(String.format("Number of vertices is: %d And number of edges is: %d", vertexCount, edgeCount));
 
 	}
 
-	public synchronized void linkNodes(String node1Label, String node2Label, String node1PropertyKey,
-			String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeName) {
+	public synchronized void singleTraversalLinkNodes(String node1Label, String node2Label, String node1PropertyKey,
+									   String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeLabel) {
 
 		String currentTime = String.valueOf(System.currentTimeMillis());
-		JanusGraphVertex a = null;
-		JanusGraphVertex b = null;
+
+		g
+				// Upsert vertex 1
+				.V().has(node1Label, node1PropertyKey, node1PropertyValue).fold()
+				.coalesce(
+						__.unfold(),
+						__.addV(node1Label)
+								.property(node1PropertyKey, node1PropertyValue))
+				.property("created", currentTime).aggregate("from")
+				// Upser vertex 2
+				.V().has(node2Label, node2PropertyKey, node2PropertyValue).fold()
+				.coalesce(
+						__.unfold(),
+						__.addV(node2Label)
+								.property(node2PropertyKey, node2PropertyValue))
+				.property("created", currentTime).as("to")
+				// Upsert edge
+				.select("from").unfold()
+				.coalesce(
+						out(edgeLabel).where(eq("to")).inE(),
+						addE(edgeLabel).to("to").property("created", currentTime)).iterate();
+	}
+
+	public synchronized void linkNodes(String node1Label, String node2Label, String node1PropertyKey,
+			String node1PropertyValue, String node2PropertyKey, String node2PropertyValue, String edgeLabel) {
+
+		String currentTime = String.valueOf(System.currentTimeMillis());
+
+		Vertex a = null;
+		Vertex b = null;
 
 		boolean node1IsNew = false;
 		boolean node2IsNew = false;
 
-		JanusGraphTransaction tx = g.newTransaction();
 
 		logger.debug("Examining vertex: " + node1Label + " : " + node1PropertyKey + " : " + node1PropertyValue);
 		logger.debug("Examining vertex: " + node2Label + " : " + node2PropertyKey + " : " + node2PropertyValue);
 
-		boolean sourceNodeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
+		boolean sourceNodeExists = g.V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
 				.hasNext();
 		if (!sourceNodeExists) {
 			logger.debug("Creating new source node because does not exist: " + node1Label + " : " + node1PropertyKey
 					+ " : " + node1PropertyValue);
 
-			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
-			logger.debug("Created an outVertex: " + node1PropertyValue + " with node id " + a.longId());
+//			a = tx.addVertex(T.label, node1Label, node1PropertyKey, node1PropertyValue, "created", currentTime);
+			a = g.addV(node1Label)
+					.property(node1PropertyKey, node1PropertyValue)
+					.property("created", currentTime).next();
+			logger.debug("Created an outVertex: " + node1PropertyValue + " with node id " + a.id());
 
 			node1IsNew = true;
 
 		}
 
-		boolean destNodeExists = tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label)
+		boolean destNodeExists = g.V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label)
 				.hasNext();
 
 		if (!destNodeExists) {
 			logger.debug("Creating new dest node because does not exist: " + node2Label + " : " + node2PropertyKey
 					+ " : " + node2PropertyValue);
-			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
-			logger.debug("Created an inVertex:" + node2PropertyValue + " with node id " + b.longId());
+//			b = tx.addVertex(T.label, node2Label, node2PropertyKey, node2PropertyValue, "created", currentTime);
+			b = g.addV(node2Label)
+					.property(node2PropertyKey, node2PropertyValue)
+					.property("created", currentTime).next();
+			logger.debug("Created an inVertex:" + node2PropertyValue + " with node id " + b.id());
 
 			node2IsNew = true;
 
 		}
-		a = (JanusGraphVertex) tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).next();
-		b = (JanusGraphVertex) tx.traversal().V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).next();
+		a = g.V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label).next();
+		b = g.V().has(node2PropertyKey, node2PropertyValue).hasLabel(node2Label).next();
 
 		if (node1IsNew && node2IsNew) {
 			logger.debug("Both nodes are new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (node1IsNew && !node2IsNew) {
 			logger.debug("Only node1 is new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && node2IsNew) {
 			logger.debug("Only node2 is new " + node1PropertyValue + " : " + node2PropertyValue);
-			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//			tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+			g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 		} else if (!node1IsNew && !node2IsNew) {
-			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
-					.outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
+//			boolean edgeExists = tx.traversal().V().has(node1PropertyKey, node1PropertyValue).hasLabel(node1Label)
+//					.outE(edgeName).inV().has(node2PropertyKey, node2PropertyValue).hasNext();
+			boolean edgeExists = g.V(a).out(edgeLabel).is(b).hasNext();
 			logger.debug("Both nodes are not new, does the edge between them already exist?: " + edgeExists);
 
 			if (!edgeExists) {
 				logger.debug("Creating a new edge between " + node1PropertyValue + " : " + node2PropertyValue);
-				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+//				tx.getVertex(a.longId()).addEdge(edgeName, tx.getVertex(b.longId()), "created", currentTime);
+				g.V(a).as("from").V(b).addE(edgeLabel).from("from").property("created", currentTime).next();
 			} else {
 				// TODO figure out how to set TTL
 			}
 		}
 
-		tx.commit();
-		tx.close();
+
 
 	}
 
