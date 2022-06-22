@@ -319,7 +319,7 @@
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-client</artifactId>
-			<version>6.5.1</version>
+			<version>6.8.15</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>servlet-api</artifactId>
